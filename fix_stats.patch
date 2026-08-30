@@ -1,0 +1,33 @@
+--- app/src/main/java/com/example/viewmodel/MainViewModel.kt
++++ app/src/main/java/com/example/viewmodel/MainViewModel.kt
+@@ -542,6 +542,15 @@
+                 completedSessions++
+                 currentSessionCount++
+                 appSettings.totalSessionsCompleted = completedSessions
++                
++                // Record stat
++                viewModelScope.launch {
++                    statsDao.insertStat(FocusSessionStats(
++                        durationSeconds = state.baseFocusDurationMinutes * 60L,
++                        isFocus = true,
++                        type = "POMODORO"
++                    ))
++                }
+             }
+             
+             if (currentSessionCount >= state.pomodoroTargetSessions && currentSessionCount > 0) {
+@@ -556,6 +565,15 @@
+             if (!isSkipped) {
+                 breaksTaken++
+                 appSettings.totalBreaksTaken = breaksTaken
++                
++                // Record stat
++                viewModelScope.launch {
++                    statsDao.insertStat(FocusSessionStats(
++                        durationSeconds = if (state.currentPhase == PomodoroPhase.LONG_BREAK) state.longBreakDurationMinutes * 60L else state.baseBreakDurationMinutes * 60L,
++                        isFocus = false,
++                        type = "POMODORO_BREAK"
++                    ))
++                }
+             }
+             nextPhase = PomodoroPhase.FOCUS

@@ -1,0 +1,350 @@
+package com.example.ui.screens
+
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import kotlinx.coroutines.delay
+import com.example.ui.components.StatCard
+import com.example.viewmodel.MainViewModel
+import com.example.viewmodel.PomodoroPhase
+import com.example.viewmodel.UiState
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PomodoroScreen(viewModel: MainViewModel, uiState: UiState, onMenuClick: () -> Unit) {
+    var showStats by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            
+            // Top Menu Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onMenuClick, modifier = Modifier.offset(x = (-12).dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
+                        modifier = Modifier.size(28.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (!uiState.hasPomodoroStarted) {
+                    IconButton(onClick = { showSettingsDialog = true }, modifier = Modifier.offset(x = 12.dp)) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.size(48.dp)) // Maintain balance
+                }
+            }
+
+            // Main Timer Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(24.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val isFocus = uiState.currentPhase == PomodoroPhase.FOCUS
+                    
+                    val phaseColor = when (uiState.currentPhase) {
+                        PomodoroPhase.FOCUS -> MaterialTheme.colorScheme.primary
+                        PomodoroPhase.BREAK -> MaterialTheme.colorScheme.tertiary
+                        PomodoroPhase.LONG_BREAK -> MaterialTheme.colorScheme.secondary
+                    }
+                    
+                    // Phase indicator
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val phaseText = when (uiState.currentPhase) {
+                                PomodoroPhase.FOCUS -> "FOCUS ALIGNMENT SESSION (${uiState.currentSessionCount + 1}/${uiState.pomodoroTargetSessions})"
+                                PomodoroPhase.BREAK -> "☕ BREAK ALIGNMENT SESSION"
+                                PomodoroPhase.LONG_BREAK -> "🛋️ LONG BREAK ALIGNMENT"
+                            }
+                            if (uiState.currentPhase == PomodoroPhase.FOCUS) {
+                                Icon(
+                                    imageVector = Icons.Outlined.LocalFireDepartment,
+                                    contentDescription = "Focus",
+                                    tint = phaseColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            Text(
+                                text = phaseText,
+                                color = phaseColor,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        val cyclesCompleted = uiState.totalSessionsCompleted / maxOf(1, uiState.pomodoroTargetSessions)
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(MaterialTheme.colorScheme.background),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$cyclesCompleted",
+                                color = phaseColor,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Timer display
+                    val mins = uiState.pomodoroTimeRemainingSeconds / 60
+                    val secs = uiState.pomodoroTimeRemainingSeconds % 60
+                    val timeString = String.format(Locale.US, "%02d:%02d", mins, secs)
+
+                    Box(contentAlignment = Alignment.Center) {
+                        PomodoroArcDial(
+                            uiState = uiState,
+                            viewModel = viewModel,
+                            phaseColor = phaseColor
+                        )
+                        Text(
+                            text = timeString,
+                            color = phaseColor,
+                            fontSize = 80.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Status text
+                    val (statusText, statusIcon, iconColor) = if (uiState.isPomodoroRunning) {
+                        val projectedEnd = uiState.currentDateTime + (uiState.pomodoroTimeRemainingSeconds * 1000L)
+                        val endFormat = SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(Date(projectedEnd))
+                        Triple("Current phase completes at $endFormat", Icons.Outlined.Adjust, phaseColor)
+                    } else {
+                        Triple("Timer paused. Press resume to align ETA.", Icons.Outlined.Schedule, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = null,
+                                tint = iconColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = statusText,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                fontSize = 11.sp,
+                                maxLines = 1,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Controls
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val currentBaseTime = when (uiState.currentPhase) {
+                            PomodoroPhase.FOCUS -> uiState.baseFocusDurationMinutes
+                            PomodoroPhase.BREAK -> uiState.baseBreakDurationMinutes
+                            PomodoroPhase.LONG_BREAK -> uiState.longBreakDurationMinutes
+                        } * 60L
+                        
+                        val buttonText = if (uiState.isPomodoroRunning) "PAUSE" 
+                                         else if (uiState.pomodoroTimeRemainingSeconds == currentBaseTime) "START" 
+                                         else "RESUME"
+
+                        val buttonIcon = if (uiState.isPomodoroRunning) Icons.Default.Pause else Icons.Default.PlayArrow
+
+                        val containerColor = if (uiState.isPomodoroRunning) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary
+                        val contentColor = if (uiState.isPomodoroRunning) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onPrimary
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(0.7f),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = { viewModel.togglePomodoroTimer() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = containerColor, 
+                                    contentColor = contentColor
+                                )
+                            ) {
+                                Icon(buttonIcon, contentDescription = buttonText)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = buttonText,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            
+                            Spacer(Modifier.width(8.dp))
+                            
+                            Box {
+                                var menuExpanded by remember { mutableStateOf(false) }
+                                
+                                FilledTonalIconButton(
+                                    onClick = { menuExpanded = true },
+                                ) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More Options")
+                                }
+                                
+                                val isSetupPhase = !uiState.isPomodoroRunning && uiState.pomodoroTimeRemainingSeconds == currentBaseTime
+                                
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Restart Phase") },
+                                        onClick = { 
+                                            viewModel.restartPomodoroPhase()
+                                            menuExpanded = false
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Skip Phase") },
+                                        onClick = { 
+                                            viewModel.skipPomodoroPhase()
+                                            menuExpanded = false
+                                        },
+                                        enabled = !isSetupPhase,
+                                        leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Reset Pomodoro") },
+                                        onClick = { 
+                                            viewModel.resetPomodoro()
+                                            menuExpanded = false
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Clear, contentDescription = null) }
+                                    )
+                                }
+                            }
+                            
+
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Live modifier when running (only active when started)
+            if (uiState.hasPomodoroStarted) {
+                 // Live modifier when running
+                 Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        "LIVE ADJUSTMENT",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        LiveAdjustmentButton(isPositive = false, onClick = { viewModel.addLiveExtraTime(-300) })
+                        LiveAdjustmentButton(isPositive = true, onClick = { viewModel.addLiveExtraTime(300) })
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(80.dp)) // space for FAB
+        }
+
+        var isPeeking by remember { mutableStateOf(false) }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .size(56.dp)
+                .clip(RoundedCornerShape(20.dp))

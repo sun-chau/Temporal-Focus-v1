@@ -1,0 +1,46 @@
+Reusing configuration cache.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources FROM-CACHE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///app/applet/app/src/main/java/com/example/data/AppDatabase.kt:29:18 'fun fallbackToDestructiveMigration(): RoomDatabase.Builder<AppDatabase>' is deprecated. Replace by overloaded version with parameter to indicate if all tables should be dropped or not.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/ChronometerScreen.kt:634:44 'val Icons.Filled.KeyboardArrowLeft: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowLeft.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/ChronometerScreen.kt:654:44 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:874:53 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:906:173 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:918:172 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:934:166 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:954:53 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:981:173 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateChronometerScreen.kt:993:172 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:251:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:696:53 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:728:173 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:740:172 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:756:166 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:776:53 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:803:173 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/CreateDailyScheduleScreen.kt:815:172 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/DeveloperOptionsScreen.kt:89:31 'val Icons.Outlined.FormatListBulleted: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.FormatListBulleted.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/LoginScreen.kt:101:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/LoginScreen.kt:321:58 'fun createConfirmDeviceCredentialIntent(p0: CharSequence!, p1: CharSequence!): Intent!' is deprecated. Deprecated in Java.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/MainScreen.kt:267:54 'val Icons.Outlined.FormatListBulleted: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.FormatListBulleted.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/PrivateJournalScreen.kt:563:90 'val Icons.Filled.FormatListBulleted: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.FormatListBulleted.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/SettingsScreen.kt:341:55 'val Icons.Filled.ViewList: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ViewList.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/TestNestedSource.kt:5:32 'val Drag: NestedScrollSource' is deprecated. This has been replaced by UserInput.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/TestNestedSource2.kt:5:37 'val Drag: NestedScrollSource' is deprecated. This has been replaced by UserInput.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/TestNestedSource2.kt:6:89 'val Drag: NestedScrollSource' is deprecated. This has been replaced by UserInput.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/TestSource.kt:5:32 'val Drag: NestedScrollSource' is deprecated. This has been replaced by UserInput.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/TestSource.kt:6:32 'val Fling: NestedScrollSource' is deprecated. This has been replaced by SideEffect.
+w: file:///app/applet/app/src/main/java/com/example/ui/screens/UserAccountScreen.kt:375:44 'val Icons.Filled.Input: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Input.
+
+BUILD SUCCESSFUL in 52s
+9 actionable tasks: 2 executed, 2 from cache, 5 up-to-date
+Configuration cache entry reused.

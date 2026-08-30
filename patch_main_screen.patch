@@ -1,0 +1,49 @@
+--- app/src/main/java/com/example/ui/screens/MainScreen.kt
++++ app/src/main/java/com/example/ui/screens/MainScreen.kt
+@@ -55,6 +55,7 @@
+     var showAboutDialog by remember { mutableStateOf(false) }
+     var showHelpDialog by remember { mutableStateOf(false) }
+     var showFeedbackDialog by remember { mutableStateOf(false) }
++    var showDeveloperOptionsScreen by remember { mutableStateOf(false) }
+ 
+     if (showProfileScreen) {
+         UserAccountScreen(viewModel = viewModel, uiState = uiState, onBack = { showProfileScreen = false })
+@@ -69,6 +70,11 @@
+         SettingsScreen(viewModel = viewModel, uiState = uiState, onBack = { showSettingsScreen = false })
+         return
+     }
++
++    if (showDeveloperOptionsScreen) {
++        DeveloperOptionsScreen(onBack = { showDeveloperOptionsScreen = false })
++        return
++    }
+ 
+     if (showManageTimersScreen) {
+         ManageTimersScreen(
+@@ -345,6 +351,26 @@
+                     )
+                     
+                     NavigationDrawerItem(
++                        icon = { Icon(Icons.Outlined.Code, contentDescription = null) },
++                        label = { Text("Developer Options") },
++                        selected = false,
++                        onClick = {
++                            scope.launch { drawerState.close() }
++                            showDeveloperOptionsScreen = true
++                        },
++                        shape = RoundedCornerShape(50),
++                        colors = NavigationDrawerItemDefaults.colors(
++                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
++                            unselectedContainerColor = Color.Transparent,
++                            selectedIconColor = MaterialTheme.colorScheme.primary,
++                            selectedTextColor = MaterialTheme.colorScheme.primary,
++                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
++                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
++                        ),
++                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
++                    )
++                    
++                    NavigationDrawerItem(
+                         icon = { Icon(Icons.Outlined.HelpOutline, contentDescription = null) },
+                         label = { Text("Help") },
+                         selected = false,

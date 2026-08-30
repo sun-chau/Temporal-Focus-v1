@@ -1,0 +1,29 @@
+--- app/src/main/java/com/example/ui/screens/ChronometerScreen.kt
++++ app/src/main/java/com/example/ui/screens/ChronometerScreen.kt
+@@ -168,7 +168,7 @@
+                 activeTasks.filter { uiState.selectedDisplayIds.contains(it.id) }
+             }
+             
+-            if (activeTasks.isEmpty()) {
++            if (displayTasks.isEmpty()) {
+                 Box(
+                     modifier = Modifier.weight(1f).fillMaxWidth(),
+                     contentAlignment = Alignment.Center
+@@ -188,14 +188,14 @@
+                             modifier = Modifier.size(48.dp)
+                         )
+                         Spacer(Modifier.height(16.dp))
+                         Text(
+-                            "No active chronometers ticking",
++                            if (activeTasks.isEmpty()) "No active chronometers ticking" else "No chronometers on stage",
+                             fontWeight = FontWeight.Bold,
+                             color = Color.White,
+                             fontSize = 18.sp
+                         )
+                         Spacer(Modifier.height(8.dp))
+                         Text(
+-                            "Generate a target deadline timer to start mapping your urgency\nmilestones on the stage.",
++                            if (activeTasks.isEmpty()) "Generate a target deadline timer to start mapping your urgency\nmilestones on the stage." else "You have active timers, but none are pinned to the stage.\nManage timers to pin them or switch to urgent mode.",
+                             color = Color.Gray,
+                             fontSize = 14.sp,
+                             textAlign = TextAlign.Center

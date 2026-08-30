@@ -1,0 +1,394 @@
+package com.example.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import com.example.data.TimerTask
+import com.example.ui.components.UniversalTimePickerDialog
+import com.example.ui.components.UniversalDatePickerDialog
+import com.example.viewmodel.MainViewModel
+import com.example.viewmodel.UiState
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickDeadlinesScreen(
+    viewModel: MainViewModel,
+    uiState: UiState,
+    onMenuClick: () -> Unit
+) {
+    var showCompleted by remember { mutableStateOf(false) }
+    
+    val completedTasks by viewModel.completedTasks.collectAsState()
+    val completedReminders = completedTasks.filter { it.labels == "Reminder" }.sortedByDescending { it.completedAt ?: 0L }
+
+    if (showCompleted) {
+        CompletedRemindersScreen(use24HourFormat = uiState.use24HourFormat, 
+            completedReminders = completedReminders,
+            onUnmarkComplete = { task -> 
+                viewModel.updateTimerTask(task.copy(isCompleted = false, completedAt = null)) 
+            },
+            onDeleteTasks = { tasksToDelete ->
+                tasksToDelete.forEach { viewModel.deleteTask(it) }
+            },
+            onBack = { showCompleted = false }
+        )
+        return
+    }
+
+    var taskName by remember { mutableStateOf("") }
+    var deadlineTimeMillis by remember { mutableStateOf<Long?>(null) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var tempDateMillis by remember { mutableStateOf(0L) }
+    val focusRequester = remember { FocusRequester() }
+
+    val activeTasks by viewModel.activeTasks.collectAsState()
+    val quickDeadlines = activeTasks.filter { it.labels == "Reminder" }.sortedBy { it.deadlineDateTime ?: Long.MAX_VALUE }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Reminders") },
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showCompleted = true },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                Icon(Icons.Default.DoneAll, contentDescription = "Completed Reminders")
+            }
+        },
+        
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Add Section
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = taskName,
+                        onValueChange = { taskName = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester),
+                        placeholder = { Text("Buy milk, Call mom, ...") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Alarm,
+                            contentDescription = "Set Deadline",
+                            tint = if (deadlineTimeMillis != null) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilledIconButton(
+                        onClick = {
+                            viewModel.addQuickDeadline(taskName, deadlineTimeMillis)
+                            taskName = ""
+                            deadlineTimeMillis = null
+                        },
+                        enabled = taskName.isNotBlank()
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Save")
+                    }
+                }
+            }
+
+            // List Section
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (quickDeadlines.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                "No active reminders",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    items(quickDeadlines) { task ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = task.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    val timeString = task.deadlineDateTime?.let {
+                                        SimpleDateFormat(if (uiState.use24HourFormat) "MMM d, HH:mm" else "MMM d, h:mm a", Locale.getDefault()).format(Date(it))
+                                    } ?: "No time set"
+                                    
+                                    Text(
+                                        text = timeString,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.markTaskComplete(task) }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.CheckCircle,
+                                        contentDescription = "Mark Complete",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        UniversalDatePickerDialog(
+            initialDateMillis = System.currentTimeMillis(),
+            onDateSelected = { dateMillis ->
+                tempDateMillis = dateMillis
+                showDatePicker = false
+                showTimePicker = true
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+
+    if (showTimePicker) {
+        UniversalTimePickerDialog(
+            initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+            initialMinute = Calendar.getInstance().get(Calendar.MINUTE),
+            is24Hour = uiState.use24HourFormat,
+            onDismiss = { showTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val cal = Calendar.getInstance()
+                cal.timeInMillis = tempDateMillis
+                cal.set(Calendar.HOUR_OF_DAY, hour)
+                cal.set(Calendar.MINUTE, minute)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                
+                deadlineTimeMillis = cal.timeInMillis
+                showTimePicker = false
+                focusRequester.requestFocus()
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CompletedRemindersScreen(use24HourFormat: Boolean, 
+    completedReminders: List<TimerTask>,
+    onUnmarkComplete: (TimerTask) -> Unit,
+    onDeleteTasks: (List<TimerTask>) -> Unit,
+    onBack: () -> Unit
+) {
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var selectedTaskIds by remember { mutableStateOf(setOf<String>()) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { 
+                    if (isSelectionMode) {
+                        Text("${selectedTaskIds.size} Selected")
+                    } else {
+                        Text("Completed Reminders") 
+                    }
+                },
+                navigationIcon = {
+                    if (isSelectionMode) {
+                        IconButton(onClick = { 
+                            isSelectionMode = false 
+                            selectedTaskIds = setOf()
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close Selection")
+                        }
+                    } else {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                },
+                actions = {
+                    if (isSelectionMode) {
+                        if (selectedTaskIds.isNotEmpty()) {
+                            IconButton(onClick = {
+                                val tasksToDelete = completedReminders.filter { it.id in selectedTaskIds }
+                                onDeleteTasks(tasksToDelete)
+                                selectedTaskIds = setOf()
+                                isSelectionMode = false
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    } else {
+                        if (completedReminders.isNotEmpty()) {
+                            IconButton(onClick = { isSelectionMode = true }) {
+                                Icon(Icons.Default.Checklist, contentDescription = "Select")
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (completedReminders.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No completed reminders",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(completedReminders) { task ->
+                    val isSelected = task.id in selectedTaskIds
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) 
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
+                            else 
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    enabled = isSelectionMode,
+                                    onClick = {
+                                        if (isSelected) {
+                                            selectedTaskIds = selectedTaskIds - task.id
+                                        } else {
+                                            selectedTaskIds = selectedTaskIds + task.id
+                                        }
+                                    }
+                                )
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (isSelectionMode) {
+                                Icon(
+                                    imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                                    contentDescription = "Select",
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(end = 16.dp)
+                                )
+                            }
+                        
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = task.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                val timeString = task.completedAt?.let {
+                                    "Completed: " + SimpleDateFormat(if (use24HourFormat) "MMM d, HH:mm" else "MMM d, h:mm a", Locale.getDefault()).format(Date(it))
+                                } ?: "Completed"
+                                
+                                Text(
+                                    text = timeString,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (!isSelectionMode) {
+                                IconButton(onClick = { onUnmarkComplete(task) }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Refresh,
+                                        contentDescription = "Unmark Complete",
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
