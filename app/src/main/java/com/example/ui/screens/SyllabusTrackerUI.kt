@@ -165,6 +165,7 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+                val hasChanges = subjectName.isNotBlank()
                 Button(
                     onClick = {
                         if (subjectName.isNotBlank()) {
@@ -174,9 +175,10 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RectangleShape
+                    shape = RectangleShape,
+                    enabled = hasChanges
                 ) {
-                    Text("SAVE")
+                    Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -197,8 +199,9 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                         FilterChip(selected = prio == p, onClick = { prio = p }, label = { Text("[ $p ]") })
                     }
                 }
+                val hasChanges = name != sub.name || prio != sub.priority
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.updateSubject(entity, sub.id, name, prio); editingSubject = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    Button(onClick = { viewModel.updateSubject(entity, sub.id, name, prio); editingSubject = null }, modifier = Modifier.weight(1f), shape = RectangleShape, enabled = hasChanges) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
                     OutlinedButton(onClick = { viewModel.deleteSubject(entity, sub.id); editingSubject = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
                 }
             }
@@ -216,6 +219,7 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                 Text("Add Module", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = weight, onValueChange = { weight = it.filter { c -> c.isDigit() } }, label = { Text("Weightage") }, modifier = Modifier.fillMaxWidth())
+                val hasChanges = title.isNotBlank() && weight.isNotBlank()
                 Button(
                     onClick = { 
                         if (title.isNotBlank() && weight.isNotBlank()) {
@@ -224,8 +228,8 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                             addingModuleToSubject = null
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape, enabled = hasChanges
+                ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
             }
         }
     }
@@ -242,8 +246,9 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 // Weightage edit not explicitly asked in ViewModel mutations, but good to have.
                 // Wait, I only added updateModule(..., newTitle). Let me just edit the title.
+                val hasChanges = title != mod.title || weight != mod.weightage.toString()
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.updateModule(entity, subId, mod.id, title); editingModule = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    Button(onClick = { viewModel.updateModule(entity, subId, mod.id, title); editingModule = null }, modifier = Modifier.weight(1f), shape = RectangleShape, enabled = hasChanges) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
                     OutlinedButton(onClick = { viewModel.deleteModule(entity, subId, mod.id); editingModule = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
                 }
             }
@@ -259,6 +264,7 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
             ) {
                 Text("Add Topic", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
+                val hasChanges = title.isNotBlank()
                 Button(
                     onClick = { 
                         if (title.isNotBlank()) {
@@ -275,8 +281,8 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                             addingTopicToModule = null
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape, enabled = hasChanges
+                ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
             }
         }
     }
@@ -290,8 +296,9 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
             ) {
                 Text("Edit Topic", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
+                val hasChanges = title != st.title
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.updateSubTopic(entity, subId, modId, st.id, title, st.isCompleted); editingTopic = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    Button(onClick = { viewModel.updateSubTopic(entity, subId, modId, st.id, title, st.isCompleted); editingTopic = null }, modifier = Modifier.weight(1f), shape = RectangleShape, enabled = hasChanges) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
                     OutlinedButton(onClick = { viewModel.deleteSubTopic(entity, subId, modId, st.id); editingTopic = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
                 }
             }

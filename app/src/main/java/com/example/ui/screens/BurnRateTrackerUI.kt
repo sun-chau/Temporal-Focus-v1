@@ -20,6 +20,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +48,7 @@ fun BurnRateTrackerUI(
     var selectedTag by remember { mutableStateOf("GENERAL") }
     var showLimitDialog by remember { mutableStateOf(false) }
     var showAddTagDialog by remember { mutableStateOf(false) }
+    var tagToDelete by remember { mutableStateOf<String?>(null) }
 
     val tags = listOf("GENERAL", "FOOD", "TRANSPORT") + payload.customTags.toList()
     if (selectedTag !in tags) {
@@ -59,21 +63,23 @@ fun BurnRateTrackerUI(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Top Fraction
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
+                .clickable { showLimitDialog = true }
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "₹%.2f / ₹%.2f".format(monthlySum, payload.monthlyLimit),
-                style = MaterialTheme.typography.displaySmall,
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
-                color = if (payload.monthlyLimit > 0.0 && monthlySum > payload.monthlyLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                color = if (payload.monthlyLimit > 0.0 && monthlySum > payload.monthlyLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
-            IconButton(onClick = { showLimitDialog = true }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Edit Limit")
-            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -98,12 +104,32 @@ fun BurnRateTrackerUI(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            tags.forEach { tag ->
+            val defaultTags = listOf("GENERAL", "FOOD", "TRANSPORT")
+            defaultTags.forEach { tag ->
                 FilterChip(
                     selected = selectedTag == tag,
                     onClick = { selectedTag = tag },
                     label = { Text(tag) }
                 )
+            }
+            payload.customTags.forEach { tag ->
+                Surface(
+                    modifier = Modifier
+                        .combinedClickable(
+                            onClick = { selectedTag = tag },
+                            onLongClick = { tagToDelete = tag }
+                        ),
+                    shape = MaterialTheme.shapes.small,
+                    color = if (selectedTag == tag) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, if (selectedTag == tag) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.outline)
+                ) {
+                    Text(
+                        text = tag,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (selectedTag == tag) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             FilterChip(
                 selected = false,
@@ -238,13 +264,15 @@ fun BurnRateTrackerUI(
                 )
             },
             confirmButton = {
+                val hasChanges = (limitInput.toDoubleOrNull() ?: 0.0) != payload.monthlyLimit
                 TextButton(
                     onClick = {
                         val limit = limitInput.toDoubleOrNull() ?: 0.0
                         viewModel.updateBurnRatePayload(entity, payload.copy(monthlyLimit = limit))
                         showLimitDialog = false
-                    }
-                ) { Text("SAVE") }
+                    },
+                    enabled = hasChanges
+                ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { showLimitDialog = false }) { Text("CANCEL") }
@@ -267,17 +295,42 @@ fun BurnRateTrackerUI(
                 )
             },
             confirmButton = {
+                val hasChanges = newTagInput.isNotBlank()
                 TextButton(
                     onClick = {
                         if (newTagInput.isNotBlank()) {
                             viewModel.addBurnRateTag(entity, newTagInput)
                         }
                         showAddTagDialog = false
-                    }
-                ) { Text("SAVE") }
+                    },
+                    enabled = hasChanges
+                ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { showAddTagDialog = false }) { Text("CANCEL") }
+            }
+        )
+    }
+
+    if (tagToDelete != null) {
+        val tag = tagToDelete!!
+        AlertDialog(
+            onDismissRequest = { tagToDelete = null },
+            title = { Text("Delete Tag") },
+            text = { Text("Are you sure you want to delete the tag '[ $tag ]'? This will not delete past transactions using this tag.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteBurnRateTag(entity, tag)
+                        if (selectedTag == tag) {
+                            selectedTag = "GENERAL"
+                        }
+                        tagToDelete = null
+                    }
+                ) { Text("DELETE", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { tagToDelete = null }) { Text("CANCEL") }
             }
         )
     }

@@ -243,7 +243,17 @@ fun GymExerciseSheet(
                 }
             }
 
-            val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "DEL", "DONE")
+
+            val hasChanges = if (initialExercise != null) {
+                name != initialExercise.name || type != initialExercise.type ||
+                repsStr != (initialExercise.sets.firstOrNull()?.reps?.toString() ?: "") ||
+                weightStr != (initialExercise.sets.firstOrNull()?.weightKg?.toString() ?: "") ||
+                distanceStr != (initialExercise.distanceMeters?.toString() ?: "") ||
+                durationStr != (initialExercise.durationSeconds?.toString() ?: "")
+            } else {
+                name.isNotBlank()
+            }
+            val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "DEL")
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.fillMaxWidth(),
@@ -253,22 +263,7 @@ fun GymExerciseSheet(
                 items(keys) { key ->
                     Button(
                         onClick = {
-                            if (key == "DONE") {
-                                if (name.isNotBlank()) {
-                                    val newSet = if (type == ExerciseType.REPS_ONLY) {
-                                        ExerciseSet(
-                                            id = initialExercise?.sets?.firstOrNull()?.id ?: UUID.randomUUID().toString(),
-                                            reps = repsStr.toIntOrNull() ?: 0,
-                                            weightKg = weightStr.toFloatOrNull()
-                                        )
-                                    } else null
-                                    
-                                    val dist = if (type == ExerciseType.TIMED_DISTANCE) distanceStr.toIntOrNull() else null
-                                    val dur = if (type == ExerciseType.TIMED_DISTANCE || type == ExerciseType.STATIC_HOLD) durationStr.toIntOrNull() else null
-                                    
-                                    onSave(name, type, newSet, dur, dist)
-                                }
-                            } else if (key == "DEL") {
+                            if (key == "DEL") {
                                 when (activeField) {
                                     "REPS" -> if (repsStr.isNotEmpty()) repsStr = repsStr.dropLast(1)
                                     "WEIGHT" -> if (weightStr.isNotEmpty()) weightStr = weightStr.dropLast(1)
@@ -284,13 +279,40 @@ fun GymExerciseSheet(
                                 }
                             }
                         },
-                        modifier = Modifier.aspectRatio(if (key == "DONE") 3f else 2f),
+                        modifier = Modifier.aspectRatio(2f),
                         shape = RectangleShape,
-                        colors = if (key == "DONE") ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) else ButtonDefaults.filledTonalButtonColors()
+                        colors = ButtonDefaults.filledTonalButtonColors()
                     ) {
                         Text(key, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
                 }
+            }
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        val newSet = if (type == ExerciseType.REPS_ONLY) {
+                            ExerciseSet(
+                                id = initialExercise?.sets?.firstOrNull()?.id ?: UUID.randomUUID().toString(),
+                                reps = repsStr.toIntOrNull() ?: 0,
+                                weightKg = weightStr.toFloatOrNull()
+                            )
+                        } else null
+                        
+                        val dist = if (type == ExerciseType.TIMED_DISTANCE) distanceStr.toIntOrNull() else null
+                        val dur = if (type == ExerciseType.TIMED_DISTANCE || type == ExerciseType.STATIC_HOLD) durationStr.toIntOrNull() else null
+                        
+                        onSave(name, type, newSet, dur, dist)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RectangleShape,
+                enabled = hasChanges,
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+            ) {
+                Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold)
             }
             if (onDelete != null) {
                 OutlinedButton(

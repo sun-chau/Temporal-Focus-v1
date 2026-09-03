@@ -122,6 +122,12 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
         val updatedTags = payload.customTags + newTag.uppercase()
         updateBurnRatePayload(tracker, payload.copy(customTags = updatedTags))
     }
+
+    fun deleteBurnRateTag(tracker: TrackerEntity, tagToDelete: String) {
+        val payload = getParsedPayload(tracker) as? BurnRatePayload ?: return
+        val updatedTags = payload.customTags - tagToDelete
+        updateBurnRatePayload(tracker, payload.copy(customTags = updatedTags))
+    }
     fun updateBurnRatePayload(entity: TrackerEntity, payload: BurnRatePayload) {
         val newData = gson.toJson(payload)
         updateTracker(entity.copy(payloadData = newData, lastModified = System.currentTimeMillis()))

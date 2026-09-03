@@ -122,6 +122,7 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+                val hasChanges = deliverableTitle.isNotBlank()
                 Button(
                     onClick = {
                         val days = daysUntilDeadline.toLongOrNull() ?: 0L
@@ -133,9 +134,10 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RectangleShape
+                    shape = RectangleShape,
+                    enabled = hasChanges
                 ) {
-                    Text("SAVE")
+                    Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -156,8 +158,14 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                         FilterChip(selected = prio == p, onClick = { prio = p }, label = { Text("[ $p ]") })
                     }
                 }
+                val hasChanges = title != task.title || prio != task.priority
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.updateAssignment(entity, task.id, title, prio); editingAssignment = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    Button(
+                        onClick = { viewModel.updateAssignment(entity, task.id, title, prio); editingAssignment = null },
+                        modifier = Modifier.weight(1f),
+                        shape = RectangleShape,
+                        enabled = hasChanges
+                    ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
                     OutlinedButton(onClick = { viewModel.deleteAssignment(entity, task.id); editingAssignment = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
                 }
             }

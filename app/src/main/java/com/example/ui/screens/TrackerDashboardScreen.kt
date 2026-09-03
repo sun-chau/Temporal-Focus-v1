@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
@@ -25,12 +27,13 @@ import com.example.data.TrackerType
 import com.example.viewmodel.MainViewModel
 import com.example.viewmodel.TrackerViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TrackerDashboardScreen(viewModel: TrackerViewModel, onMenuClick: () -> Unit) {
     val trackers by viewModel.trackers.collectAsStateWithLifecycle()
     var showSheet by remember { mutableStateOf(false) }
     var selectedTracker by remember { mutableStateOf<TrackerEntity?>(null) }
+    var trackerToDelete by remember { mutableStateOf<TrackerEntity?>(null) }
     val context = LocalContext.current
 
     if (selectedTracker != null) {
@@ -77,9 +80,10 @@ fun TrackerDashboardScreen(viewModel: TrackerViewModel, onMenuClick: () -> Unit)
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                            .clickable {
-                                selectedTracker = tracker
-                            }
+                            .combinedClickable(
+                                onClick = { selectedTracker = tracker },
+                                onLongClick = { trackerToDelete = tracker }
+                            )
                             .padding(16.dp)
                     ) {
                         Column {
@@ -128,8 +132,31 @@ fun TrackerDashboardScreen(viewModel: TrackerViewModel, onMenuClick: () -> Unit)
         )
     }
     }
-}
 
+    trackerToDelete?.let { targetTracker ->
+        AlertDialog(
+            onDismissRequest = { trackerToDelete = null },
+            title = { Text("Purge Tracker") },
+            text = { 
+                Text(
+                    "Are you sure you want to permanently delete '[ ${targetTracker.title} ]'? All historical logs and schemas will be destroyed.",
+                    color = MaterialTheme.colorScheme.error
+                ) 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteTracker(targetTracker)
+                        trackerToDelete = null
+                    }
+                ) { Text("DELETE", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { trackerToDelete = null }) { Text("CANCEL") }
+            }
+        )
+    }
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewTrackerSheet(onDismiss: () -> Unit, onSave: (String, TrackerType) -> Unit) {

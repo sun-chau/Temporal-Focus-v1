@@ -116,6 +116,7 @@ fun CustomSchemaBuilderUI(entity: TrackerEntity, payload: CustomPayload, viewMod
                         )
                     }
                 }
+                val hasChanges = label.isNotBlank()
                 Button(
                     onClick = {
                         if (label.isNotBlank()) {
@@ -124,9 +125,10 @@ fun CustomSchemaBuilderUI(entity: TrackerEntity, payload: CustomPayload, viewMod
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RectangleShape
+                    shape = RectangleShape,
+                    enabled = hasChanges
                 ) {
-                    Text("SAVE FIELD")
+                    Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -303,6 +305,7 @@ fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tra
                     }
                 }
                 
+                val hasChanges = editValues != entry.fieldData
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
@@ -310,9 +313,10 @@ fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tra
                             editingEntry = null
                         },
                         modifier = Modifier.weight(1f),
-                        shape = RectangleShape
+                        shape = RectangleShape,
+                        enabled = hasChanges
                     ) {
-                        Text("SAVE")
+                        Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold)
                     }
                     OutlinedButton(
                         onClick = {
