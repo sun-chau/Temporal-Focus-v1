@@ -3,6 +3,7 @@ package com.example.ui.theme
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -183,19 +184,19 @@ fun MyApplicationTheme(
         onBackground = parsedOnBackground,
         onSurface = parsedOnBackground,
         error = safeParseColor(customOverdueTextColor, baseColorScheme.error),
-        surface = safeParseColor(customBackdropColor, baseColorScheme.surface, 0.9f),
-        surfaceVariant = parsedPrimary.copy(alpha = 0.1f),
-        onSurfaceVariant = parsedOnBackground.copy(alpha = 0.8f),
-        primaryContainer = parsedPrimary.copy(alpha = 0.2f),
+        surface = safeParseColor(customBackdropColor, baseColorScheme.surface, 1.0f).compositeOver(parsedBackground),
+        surfaceVariant = parsedPrimary.copy(alpha = 0.1f).compositeOver(parsedBackground),
+        onSurfaceVariant = parsedOnBackground.copy(alpha = 0.8f).compositeOver(parsedBackground),
+        primaryContainer = parsedPrimary.copy(alpha = 0.2f).compositeOver(parsedBackground),
         onPrimaryContainer = parsedPrimary,
-        secondary = parsedPrimary.copy(alpha = 0.8f),
-        secondaryContainer = parsedPrimary.copy(alpha = 0.15f),
+        secondary = parsedPrimary.copy(alpha = 0.8f).compositeOver(parsedBackground),
+        secondaryContainer = parsedPrimary.copy(alpha = 0.15f).compositeOver(parsedBackground),
         onSecondaryContainer = parsedPrimary,
-        tertiary = parsedPrimary.copy(alpha = 0.6f),
-        tertiaryContainer = parsedPrimary.copy(alpha = 0.1f),
+        tertiary = parsedPrimary.copy(alpha = 0.6f).compositeOver(parsedBackground),
+        tertiaryContainer = parsedPrimary.copy(alpha = 0.1f).compositeOver(parsedBackground),
         onTertiaryContainer = parsedPrimary,
-        outline = parsedOnBackground.copy(alpha = 0.2f),
-        outlineVariant = parsedOnBackground.copy(alpha = 0.1f)
+        outline = parsedOnBackground.copy(alpha = 0.2f).compositeOver(parsedBackground),
+        outlineVariant = parsedOnBackground.copy(alpha = 0.1f).compositeOver(parsedBackground)
     )
 
     MaterialTheme(colorScheme = finalColorScheme, typography = Typography, content = content)

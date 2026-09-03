@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.viewmodel.TrackerViewModel
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.vectorResource
 import com.example.ui.screens.updateLogs
@@ -225,7 +227,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.CHECK_INS) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle, contentDescription = null) },
-                        label = { Text("Check-Ins") },
+                        label = { Text("Trackers") },
                         selected = uiState.currentMode == TimerMode.CHECK_INS,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.CHECK_INS)
@@ -411,7 +413,7 @@ fun MainScreen(viewModel: MainViewModel) {
                             TimerMode.UPDATE_LOG -> UpdateLogScreen(onBack = { scope.launch { drawerState.open() } })
                             TimerMode.ANALYTICS -> AnalyticsDashboardScreen(viewModel = viewModel, uiState = uiState, onBack = { scope.launch { drawerState.open() } }, onOpenProfile = { viewModel.setTimerMode(TimerMode.PROFILE) })
                             TimerMode.PRIVATE_JOURNAL -> PrivateJournalScreen(viewModel = viewModel, uiState = uiState, onMenuClick = { scope.launch { drawerState.open() } })
-                            TimerMode.CHECK_INS -> CheckInsScreen(viewModel = viewModel, onMenuClick = { scope.launch { drawerState.open() } })
+                            TimerMode.CHECK_INS -> TrackerDashboardScreen(viewModel = viewModel(), onMenuClick = { scope.launch { drawerState.open() } })
                         }
                     }
                 }

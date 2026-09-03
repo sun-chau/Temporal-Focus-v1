@@ -13,6 +13,9 @@ interface TrackerDao {
     @Query("SELECT * FROM trackers ORDER BY createdAt DESC")
     fun getAllTrackers(): Flow<List<TrackerEntity>>
 
+    @Query("SELECT * FROM trackers WHERE id = :id")
+    fun getTrackerById(id: String): Flow<TrackerEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTracker(tracker: TrackerEntity)
 
@@ -21,19 +24,4 @@ interface TrackerDao {
 
     @Delete
     suspend fun deleteTracker(tracker: TrackerEntity)
-
-    @Query("SELECT * FROM tracker_logs WHERE trackerId = :trackerId ORDER BY dateString DESC")
-    fun getLogsForTracker(trackerId: String): Flow<List<TrackerLogEntity>>
-    
-    @Query("SELECT * FROM tracker_logs")
-    fun getAllLogs(): Flow<List<TrackerLogEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLog(log: TrackerLogEntity)
-
-    @Delete
-    suspend fun deleteLog(log: TrackerLogEntity)
-    
-    @Query("SELECT * FROM tracker_logs WHERE trackerId = :trackerId AND dateString = :dateString LIMIT 1")
-    suspend fun getLogForDate(trackerId: String, dateString: String): TrackerLogEntity?
 }

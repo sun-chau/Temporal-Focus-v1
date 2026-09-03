@@ -49,7 +49,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         
         val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
-        ContextCompat.registerReceiver(this, screenOffReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        registerReceiver(screenOffReceiver, filter)
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

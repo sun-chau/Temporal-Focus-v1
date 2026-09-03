@@ -1,6 +1,7 @@
 import re
 with open("app/src/main/java/com/example/viewmodel/TrackerViewModel.kt", "r") as f:
     content = f.read()
+
 new_impl = """    fun getParsedPayload(entity: TrackerEntity): Any? {
         return try {
             val json = if (entity.payloadData.isBlank() || entity.payloadData == "{}") null else entity.payloadData

@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import kotlinx.coroutines.launch
 
-@Database(entities = [TimerTask::class, FocusSessionStats::class, DailyScheduleTask::class, JournalEntry::class, JournalTemplate::class, TrackerEntity::class, TrackerLogEntity::class], version = 15, exportSchema = false)
+@TypeConverters(TrackerConverters::class)
+@Database(entities = [TimerTask::class, FocusSessionStats::class, DailyScheduleTask::class, JournalEntry::class, JournalTemplate::class, TrackerEntity::class], version = 16, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun timerTaskDao(): TimerTaskDao
     abstract fun focusSessionStatsDao(): FocusSessionStatsDao

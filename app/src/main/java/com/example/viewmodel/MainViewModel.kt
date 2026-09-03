@@ -30,6 +30,8 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.content.Context
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.example.data.*
 import com.example.data.AppDatabase
 import com.example.data.toRecurrencePattern
 import com.example.data.FocusSessionStats
@@ -147,8 +149,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val journalEntries: StateFlow<List<com.example.data.JournalEntry>>
     val journalTemplates: StateFlow<List<com.example.data.JournalTemplate>>
     val trackers: StateFlow<List<com.example.data.TrackerEntity>>
-    val trackerLogs: StateFlow<List<com.example.data.TrackerLogEntity>>
-    
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -196,7 +196,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         journalEntries = journalDao.getAllEntries().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         journalTemplates = journalDao.getAllTemplates().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         trackers = trackerDao.getAllTrackers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-        trackerLogs = trackerDao.getAllLogs().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         repository = TimerTaskRepository(database.timerTaskDao())
         appSettings = AppSettings(application)
         performRollingRefill()
@@ -1360,98 +1359,22 @@ fun insertJournalEntry(entry: com.example.data.JournalEntry) {
             journalDao.deleteTemplate(template)
         }
     }
-    fun insertTracker(tracker: com.example.data.TrackerEntity) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            trackerDao.insertTracker(tracker)
-        }
-    }
+    
+    private val gson = Gson()
 
-    fun updateTracker(tracker: com.example.data.TrackerEntity) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            trackerDao.updateTracker(tracker)
-        }
-    }
-
-    fun deleteTracker(tracker: com.example.data.TrackerEntity) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            trackerDao.deleteTracker(tracker)
-        }
-    }
-
-    fun logTrackerVolume(tracker: com.example.data.TrackerEntity, dateString: String, volume: Float) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val existingLog = trackerDao.getLogForDate(tracker.id, dateString)
-            if (existingLog != null) {
-                // Update existing
-                trackerDao.insertLog(existingLog.copy(loggedVolume = volume))
-            } else {
-                // Insert new
-                trackerDao.insertLog(com.example.data.TrackerLogEntity(trackerId = tracker.id, dateString = dateString, loggedVolume = volume))
-            }
-            
-            // Recalculate banked days and streaks (simplified logic for now)
-            // Extra Days = (Logged Volume - Daily Target) / Daily Target
-            val allLogs = trackerLogs.value.filter { it.trackerId == tracker.id }
-            val totalLogged = allLogs.sumOf { it.loggedVolume.toDouble() }.toFloat() + volume - (existingLog?.loggedVolume ?: 0f)
-            
-            val target = if (tracker.type == com.example.data.TrackerType.FINITE && tracker.deadlineMillis != null && tracker.totalVolume != null) {
-                 // Dynamic target: calculate remaining / days left
-                 val daysLeft = ((tracker.deadlineMillis - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceIn(1, 120).toFloat()
-                 val remainingVolume = tracker.totalVolume - (totalLogged - volume)
-                 if (remainingVolume > 0) remainingVolume / daysLeft else tracker.staticDailyTarget
-            } else {
-                 tracker.staticDailyTarget
-            }
-            
-            var newBankedDays = tracker.bankedDays
-            if (target > 0) {
-                 val extraDays = ((volume - target) / target).toInt()
-                 if (extraDays > 0) newBankedDays += extraDays
-            }
-            
-            val newStreak = if (volume >= target) tracker.currentStreak + 1 else tracker.currentStreak
-            trackerDao.updateTracker(tracker.copy(
-                bankedDays = newBankedDays,
-                currentStreak = newStreak,
-                streakAtRisk = false
-            ))
-        }
-    }
-
-    fun spendBankedDay(tracker: com.example.data.TrackerEntity) {
-        if (tracker.bankedDays > 0) {
-            viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                trackerDao.updateTracker(tracker.copy(
-                    bankedDays = tracker.bankedDays - 1,
-                    streakAtRisk = false
-                ))
-            }
-        }
-    }
-
-    fun acceptBreak(tracker: com.example.data.TrackerEntity) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            trackerDao.updateTracker(tracker.copy(
-                currentStreak = 0,
-                streakAtRisk = false
-            ))
-        }
-    }
-
+    
     fun setUse24HourFormat(use24Hour: Boolean) {
         appSettings.use24HourFormat = use24Hour
         _uiState.update { it.copy(use24HourFormat = use24Hour) }
     }
-
-    
+        
     fun setEnableDailyScheduleRadioMenu(enabled: Boolean) {
         appSettings.enableDailyScheduleRadioMenu = enabled
         _uiState.update { it.copy(enableDailyScheduleRadioMenu = enabled) }
     }
-
+    
     fun setAutoStatusIfMissed(status: String) {
         appSettings.autoStatusIfMissed = status
         _uiState.update { it.copy(autoStatusIfMissed = status) }
     }
-
 }
