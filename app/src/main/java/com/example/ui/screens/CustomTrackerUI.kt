@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,7 +30,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTrackerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: TrackerViewModel) {
     if (payload.schema.isEmpty()) {
@@ -38,7 +40,7 @@ fun CustomTrackerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tr
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CustomSchemaBuilderUI(entity: TrackerEntity, payload: CustomPayload, viewModel: TrackerViewModel) {
     var pendingSchema by remember { mutableStateOf(listOf<CustomField>()) }
@@ -131,7 +133,7 @@ fun CustomSchemaBuilderUI(entity: TrackerEntity, payload: CustomPayload, viewMod
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: TrackerViewModel) {
     var inputValues by remember { mutableStateOf(mapOf<String, String>()) }
@@ -209,6 +211,10 @@ fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tra
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { editingEntry = entry }
+                        )
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -219,22 +225,6 @@ fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tra
                             fontSize = 12.sp,
                             modifier = Modifier.weight(1f)
                         )
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { expanded = true }, modifier = Modifier.size(24.dp)) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(20.dp))
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(
-                                    text = { Text("Edit") }, 
-                                    onClick = { expanded = false; editingEntry = entry }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, 
-                                    onClick = { expanded = false; viewModel.deleteCustomEntry(entity, entry.id) }
-                                )
-                            }
-                        }
                     }
                     Spacer(Modifier.height(8.dp))
                     
@@ -313,15 +303,27 @@ fun CustomLoggerUI(entity: TrackerEntity, payload: CustomPayload, viewModel: Tra
                     }
                 }
                 
-                Button(
-                    onClick = {
-                        viewModel.updateCustomEntry(entity, entry.id, editValues)
-                        editingEntry = null
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RectangleShape
-                ) {
-                    Text("SAVE CHANGES")
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            viewModel.updateCustomEntry(entity, entry.id, editValues)
+                            editingEntry = null
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RectangleShape
+                    ) {
+                        Text("SAVE")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.deleteCustomEntry(entity, entry.id)
+                            editingEntry = null
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RectangleShape
+                    ) {
+                        Text("DELETE", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

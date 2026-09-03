@@ -1,7 +1,15 @@
-with open("app/src/main/java/com/example/data/DailyScheduleTask.kt", "r") as f:
+with open("app/src/main/java/com/example/data/TrackerEntity.kt", "r") as f:
     content = f.read()
 
-if "val laneIndex: Int = 0" not in content:
-    content = content.replace("val status: String = ScheduleStatus.NOT_DONE.name", "val status: String = ScheduleStatus.NOT_DONE.name,\n    val laneIndex: Int = 0,\n    val isFinished: Boolean = false")
-    with open("app/src/main/java/com/example/data/DailyScheduleTask.kt", "w") as f:
-        f.write(content)
+content = content.replace(
+    "data class BurnRatePayload(val monthlyLimit: Int = 0, val transactions: List<Transaction> = emptyList())",
+    "data class BurnRatePayload(val monthlyLimit: Double = 0.0, val customTags: Set<String> = emptySet(), val transactions: List<Transaction> = emptyList())"
+)
+
+content = content.replace(
+    "data class Transaction(val id: String, val amountInr: Int, val timestampEpoch: Long, val tag: String)",
+    "data class Transaction(val id: String, val amount: Double, val timestampEpoch: Long, val tag: String)"
+)
+
+with open("app/src/main/java/com/example/data/TrackerEntity.kt", "w") as f:
+    f.write(content)

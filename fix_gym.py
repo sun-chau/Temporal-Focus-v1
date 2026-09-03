@@ -1,254 +1,115 @@
-with open("app/src/main/java/com/example/ui/screens/GymTrackerUI.kt", "w") as f:
-    f.write("""package com.example.ui.screens
+import re
+with open("app/src/main/java/com/example/ui/screens/GymTrackerUI.kt", "r") as f:
+    content = f.read()
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.data.*
-import com.example.viewmodel.TrackerViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
+if "import androidx.compose.foundation.ExperimentalFoundationApi" not in content:
+    content = content.replace("import androidx.compose.foundation.border", "import androidx.compose.foundation.ExperimentalFoundationApi\nimport androidx.compose.foundation.combinedClickable\nimport androidx.compose.foundation.border")
 
-@Composable
-fun GymTrackerUI(entity: TrackerEntity, payload: GymPayload, viewModel: TrackerViewModel) {
-    var addingToSessionId by remember { mutableStateOf<String?>(null) }
-    var editingExercise by remember { mutableStateOf<Pair<String, ExerciseLog>?>(null) } // sessionId to ExerciseLog
+if "@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)" not in content:
+    content = content.replace("@OptIn(ExperimentalMaterial3Api::class)", "@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)")
 
-    val sortedRoutines = payload.routines.sortedByDescending { it.dateEpoch }
-    val formatter = SimpleDateFormat("dd MMM yyyy - HH:mm", Locale.getDefault())
-
-    val historicalExercises = remember(payload) {
-        payload.routines.flatMap { it.exercises }.map { it.name }.toSet()
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedButton(
-            onClick = {
-                val newSession = WorkoutSession(dateEpoch = System.currentTimeMillis())
-                val newRoutines = payload.routines + newSession
-                viewModel.updateGymPayload(entity, payload.copy(routines = newRoutines))
-            },
-            shape = RectangleShape,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("START NEW SESSION")
-        }
-
-        Spacer(Modifier.height(16.dp))
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(sortedRoutines) { session ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        formatter.format(Date(session.dateEpoch)),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    session.exercises.forEach { ex ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("> ${ex.name}", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                                when (ex.type) {
-                                    ExerciseType.REPS_ONLY -> {
-                                        ex.sets.forEachIndexed { i, set ->
-                                            val w = set.weightKg?.let { " @ ${it}kg" } ?: ""
-                                            Text("  Set ${i+1}: ${set.reps} reps$w", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
+# 1. Update the row with combinedClickable
+row_old = """                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("> ${ex.name.uppercase(Locale.getDefault())}", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                                            val details = when (ex.type) {
+                                                ExerciseType.REPS_ONLY -> "${ex.sets.size} SETS"
+                                                ExerciseType.TIMED_DISTANCE -> "${ex.distanceMeters ?: 0}M IN ${ex.durationSeconds ?: 0}S"
+                                                ExerciseType.STATIC_HOLD -> "${ex.durationSeconds ?: 0}S HOLD"
+                                            }
+                                            Text(details, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                                         }
-                                    }
-                                    ExerciseType.TIMED_DISTANCE -> {
-                                        val m = (ex.durationSeconds ?: 0) / 60
-                                        val s = (ex.durationSeconds ?: 0) % 60
-                                        Text("  ${ex.distanceMeters ?: 0}M : ${m}m ${s}s", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                    ExerciseType.STATIC_HOLD -> {
-                                        Text("  ${ex.durationSeconds ?: 0}s HOLD", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
-                            }
-                            IconButton(onClick = { editingExercise = Pair(session.id, ex) }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit")
-                            }
-                            IconButton(onClick = { viewModel.deleteExercise(entity, session.id, ex.id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
-                            }
-                        }
-                    }
+                                        var expanded by remember { mutableStateOf(false) }
+                                        Box {
+                                            IconButton(onClick = { expanded = true }) {
+                                                Icon(Icons.Default.MoreVert, contentDescription = "More")
+                                            }
+                                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                                DropdownMenuItem(text = { Text("Edit") }, onClick = { expanded = false; editingExercise = Pair(session.id, ex) })
+                                                DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { expanded = false; viewModel.deleteExercise(entity, session.id, ex.id) })
+                                            }
+                                        }
+                                    }"""
+row_new = """                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedClickable(
+                                                onClick = {},
+                                                onLongClick = { editingExercise = Pair(session.id, ex) }
+                                            )
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("> ${ex.name.uppercase(Locale.getDefault())}", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                                            val details = when (ex.type) {
+                                                ExerciseType.REPS_ONLY -> "${ex.sets.size} SETS"
+                                                ExerciseType.TIMED_DISTANCE -> "${ex.distanceMeters ?: 0}M IN ${ex.durationSeconds ?: 0}S"
+                                                ExerciseType.STATIC_HOLD -> "${ex.durationSeconds ?: 0}S HOLD"
+                                            }
+                                            Text(details, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }"""
+content = content.replace(row_old, row_new)
 
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = { addingToSessionId = session.id },
-                        shape = RectangleShape,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("+ LOG EXERCISE")
-                    }
+# 2. Update GymExerciseSheet signature and calls
+content = content.replace("onSave: (ExerciseLog) -> Unit", "onSave: (String, ExerciseType, ExerciseSet?, Int?, Int?) -> Unit,\n    onDelete: (() -> Unit)? = null")
+
+content = content.replace("""        addingExerciseToSession?.let { sessionId ->
+            GymExerciseSheet(
+                historicalExercises = historicalExercises,
+                initialExercise = null,
+                onDismiss = { addingExerciseToSession = null },
+                onSave = { ex ->
+                    val payload = viewModel.getParsedPayload(entity) as? GymPayload ?: return@GymExerciseSheet
+                    val updatedRoutines = payload.routines.map { s -> if (s.id == sessionId) s.copy(exercises = s.exercises + ex) else s }
+                    viewModel.updateGymPayload(entity, payload.copy(routines = updatedRoutines))
+                    addingExerciseToSession = null
                 }
-            }
-        }
-    }
-
-    if (addingToSessionId != null) {
-        GymExerciseSheet(
-            historicalExercises = historicalExercises,
-            initialExercise = null,
-            onDismiss = { addingToSessionId = null },
-            onSave = { newEx ->
-                val newRoutines = payload.routines.map { s ->
-                    if (s.id == addingToSessionId) s.copy(exercises = s.exercises + newEx) else s
-                }
-                viewModel.updateGymPayload(entity, payload.copy(routines = newRoutines))
-                addingToSessionId = null
-            }
-        )
-    }
-
-    editingExercise?.let { (sessionId, ex) ->
-        GymExerciseSheet(
-            historicalExercises = historicalExercises,
-            initialExercise = ex,
-            onDismiss = { editingExercise = null },
-            onSave = { updatedEx ->
-                viewModel.updateExercise(entity, sessionId, updatedEx)
-                editingExercise = null
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GymExerciseSheet(
-    historicalExercises: Set<String>,
-    initialExercise: ExerciseLog?,
-    onDismiss: () -> Unit,
-    onSave: (ExerciseLog) -> Unit
-) {
-    var name by remember { mutableStateOf(initialExercise?.name ?: "") }
-    var type by remember { mutableStateOf(initialExercise?.type ?: ExerciseType.REPS_ONLY) }
-
-    // For simplicity, we just edit/add the first set in this UI if REPS_ONLY
-    var repsStr by remember { mutableStateOf(initialExercise?.sets?.firstOrNull()?.reps?.toString() ?: "") }
-    var weightStr by remember { mutableStateOf(initialExercise?.sets?.firstOrNull()?.weightKg?.toString() ?: "") }
-
-    var distanceStr by remember { mutableStateOf(initialExercise?.distanceMeters?.toString() ?: "") }
-    var durationStr by remember { mutableStateOf(initialExercise?.durationSeconds?.toString() ?: "") }
-
-    var activeField by remember { mutableStateOf(if (type == ExerciseType.REPS_ONLY) "REPS" else "DISTANCE") }
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (historicalExercises.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(historicalExercises.toList()) { exName ->
-                        FilterChip(
-                            selected = name == exName,
-                            onClick = { name = exName },
-                            label = { Text("[ $exName ]", fontFamily = FontFamily.Monospace) }
-                        )
-                    }
-                }
-            }
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Exercise Name (e.g. Pushups)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
             )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ExerciseType.values().forEach { t ->
-                    FilterChip(
-                        selected = type == t,
-                        onClick = {
-                            type = t
-                            activeField = when (t) {
-                                ExerciseType.REPS_ONLY -> "REPS"
-                                ExerciseType.TIMED_DISTANCE -> "DISTANCE"
-                                ExerciseType.STATIC_HOLD -> "DURATION"
-                            }
-                        },
-                        label = { Text(t.name.replace("_", " ")) }
-                    )
+        }""", """        addingExerciseToSession?.let { sessionId ->
+            GymExerciseSheet(
+                historicalExercises = historicalExercises,
+                initialExercise = null,
+                onDismiss = { addingExerciseToSession = null },
+                onSave = { exName, type, newSet, dur, dist ->
+                    viewModel.logGymSet(entity, sessionId, exName, type, newSet, dur, dist)
+                    addingExerciseToSession = null
                 }
-            }
+            )
+        }""")
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (type) {
-                    ExerciseType.REPS_ONLY -> {
-                        MetricBox("REPS", repsStr, activeField == "REPS", Modifier.weight(1f)) { activeField = "REPS" }
-                        MetricBox("WEIGHT (KG)", weightStr, activeField == "WEIGHT", Modifier.weight(1f)) { activeField = "WEIGHT" }
-                    }
-                    ExerciseType.TIMED_DISTANCE -> {
-                        MetricBox("DISTANCE (M)", distanceStr, activeField == "DISTANCE", Modifier.weight(1f)) { activeField = "DISTANCE" }
-                        MetricBox("DURATION (S)", durationStr, activeField == "DURATION", Modifier.weight(1f)) { activeField = "DURATION" }
-                    }
-                    ExerciseType.STATIC_HOLD -> {
-                        MetricBox("DURATION (S)", durationStr, activeField == "DURATION", Modifier.weight(1f)) { activeField = "DURATION" }
-                    }
+content = content.replace("""        editingExercise?.let { (sessionId, ex) ->
+            GymExerciseSheet(
+                historicalExercises = historicalExercises,
+                initialExercise = ex,
+                onDismiss = { editingExercise = null },
+                onSave = { updatedEx ->
+                    viewModel.updateExercise(entity, sessionId, updatedEx)
+                    editingExercise = null
                 }
-            }
+            )
+        }""", """        editingExercise?.let { (sessionId, ex) ->
+            GymExerciseSheet(
+                historicalExercises = historicalExercises,
+                initialExercise = ex,
+                onDismiss = { editingExercise = null },
+                onSave = { exName, type, newSet, dur, dist ->
+                    viewModel.logGymSet(entity, sessionId, exName, type, newSet, dur, dist)
+                    editingExercise = null
+                },
+                onDelete = {
+                    viewModel.deleteExercise(entity, sessionId, ex.id)
+                    editingExercise = null
+                }
+            )
+        }""")
 
-            val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "DEL", "DONE")
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(keys) { key ->
-                    Button(
-                        onClick = {
-                            if (key == "DONE") {
+# 3. Update the DONE button logic in GymExerciseSheet
+done_old = """                            if (key == "DONE") {
                                 if (name.isNotBlank()) {
                                     val sets = if (type == ExerciseType.REPS_ONLY) {
                                         listOf(ExerciseSet(
@@ -259,7 +120,6 @@ fun GymExerciseSheet(
                                     } else {
                                         emptyList()
                                     }
-
                                     val ex = ExerciseLog(
                                         id = initialExercise?.id ?: UUID.randomUUID().toString(),
                                         name = name,
@@ -270,45 +130,42 @@ fun GymExerciseSheet(
                                     )
                                     onSave(ex)
                                 }
-                            } else if (key == "DEL") {
-                                when (activeField) {
-                                    "REPS" -> if (repsStr.isNotEmpty()) repsStr = repsStr.dropLast(1)
-                                    "WEIGHT" -> if (weightStr.isNotEmpty()) weightStr = weightStr.dropLast(1)
-                                    "DISTANCE" -> if (distanceStr.isNotEmpty()) distanceStr = distanceStr.dropLast(1)
-                                    "DURATION" -> if (durationStr.isNotEmpty()) durationStr = durationStr.dropLast(1)
+                            }"""
+done_new = """                            if (key == "DONE") {
+                                if (name.isNotBlank()) {
+                                    val newSet = if (type == ExerciseType.REPS_ONLY) {
+                                        ExerciseSet(
+                                            id = UUID.randomUUID().toString(),
+                                            reps = repsStr.toIntOrNull() ?: 0,
+                                            weightKg = weightStr.toFloatOrNull()
+                                        )
+                                    } else null
+                                    
+                                    val dist = if (type == ExerciseType.TIMED_DISTANCE) distanceStr.toIntOrNull() else null
+                                    val dur = if (type == ExerciseType.TIMED_DISTANCE || type == ExerciseType.STATIC_HOLD) durationStr.toIntOrNull() else null
+                                    
+                                    onSave(name, type, newSet, dur, dist)
                                 }
-                            } else {
-                                when (activeField) {
-                                    "REPS" -> repsStr += key
-                                    "WEIGHT" -> weightStr += key
-                                    "DISTANCE" -> distanceStr += key
-                                    "DURATION" -> durationStr += key
-                                }
-                            }
-                        },
-                        modifier = Modifier.aspectRatio(if (key == "DONE") 3f else 2f),
-                        shape = RectangleShape,
-                        colors = if (key == "DONE") ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) else ButtonDefaults.filledTonalButtonColors()
-                    ) {
-                        Text(key, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                    }
+                            }"""
+content = content.replace(done_old, done_new)
+
+# Add delete button if onDelete is provided
+# We will append it below the LazyVerticalGrid
+grid_end = "            }\n        }\n    }\n}"
+delete_button = """            }
+            if (onDelete != null) {
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RectangleShape
+                ) {
+                    Text("DELETE EXERCISE", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
     }
-}
+}"""
+content = content.replace(grid_end, delete_button)
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MetricBox(label: String, value: String, isActive: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Column(
-        modifier = modifier
-            .border(if (isActive) 2.dp else 1.dp, if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, RectangleShape)
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-        Text(if (value.isEmpty()) "0" else value, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.headlineMedium)
-    }
-}
-""")
+with open("app/src/main/java/com/example/ui/screens/GymTrackerUI.kt", "w") as f:
+    f.write(content)

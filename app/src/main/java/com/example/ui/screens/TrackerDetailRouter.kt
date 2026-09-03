@@ -91,8 +91,26 @@ fun TrackerDetailRouter(
                         Text("Invalid Assignment Payload", color = MaterialTheme.colorScheme.error)
                     }
                 }
-                else -> {
-                    Text("Payload UI Rendering: COMING SOON", fontFamily = FontFamily.Monospace)
+                TrackerType.BINARY -> {
+                    if (payload is BinaryPayload) {
+                        BinaryTrackerUI(tracker, payload, viewModel)
+                    } else {
+                        Text("Invalid Binary Payload", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                TrackerType.VOLUME -> {
+                    if (payload is VolumePayload) {
+                        VolumeTrackerUI(tracker, payload, viewModel)
+                    } else {
+                        Text("Invalid Volume Payload", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                TrackerType.BURN_RATE -> {
+                    if (payload is BurnRatePayload) {
+                        BurnRateTrackerUI(tracker, payload, viewModel)
+                    } else {
+                        Text("Invalid BurnRate Payload", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

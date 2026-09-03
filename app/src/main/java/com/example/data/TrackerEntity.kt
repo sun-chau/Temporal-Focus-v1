@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
 
-enum class TrackerType { GYM, SYLLABUS, ASSIGNMENT, CUSTOM }
+enum class TrackerType { GYM, SYLLABUS, ASSIGNMENT, CUSTOM, BINARY, VOLUME, BURN_RATE }
 
 @Entity(tableName = "trackers")
 data class TrackerEntity(
@@ -81,3 +81,15 @@ data class CustomPayload(val schema: List<CustomField> = emptyList(), val entrie
 data class CustomEntry(val id: String = UUID.randomUUID().toString(), val timestampEpoch: Long, val fieldData: Map<String, String>)
 data class CustomField(val id: String = UUID.randomUUID().toString(), val label: String, val fieldType: CustomFieldType)
 enum class CustomFieldType { NUMBER, TEXT, CHECKBOX }
+
+
+// --- New Schemas ---
+
+data class BinaryPayload(val disciplines: List<BinaryDiscipline> = emptyList())
+data class BinaryDiscipline(val id: String, val name: String, val completedDates: Set<String> = emptySet())
+
+data class VolumePayload(val resources: List<VolumeResource> = emptyList())
+data class VolumeResource(val id: String, val title: String, val currentProgress: Int, val totalProgress: Int, val metricLabel: String)
+
+data class BurnRatePayload(val monthlyLimit: Double = 0.0, val customTags: Set<String> = emptySet(), val transactions: List<Transaction> = emptyList())
+data class Transaction(val id: String, val amount: Double, val timestampEpoch: Long, val tag: String)

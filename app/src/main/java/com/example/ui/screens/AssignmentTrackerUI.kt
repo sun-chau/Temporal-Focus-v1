@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,13 +23,13 @@ import androidx.compose.ui.unit.dp
 import com.example.data.*
 import com.example.viewmodel.TrackerViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewModel: TrackerViewModel) {
     var showAddAssignment by remember { mutableStateOf(false) }
     var editingAssignment by remember { mutableStateOf<Deliverable?>(null) }
     
-    val sortedTasks = payload.tasks.sortedBy { it.deadlineEpoch }
+    val sortedTasks = payload.tasks.sortedWith(compareBy({ it.status }, { it.deadlineEpoch }))
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(sortedTasks) { task ->
@@ -43,16 +45,18 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                        .clickable {
-                            // Cycle status
-                            val newStatus = when (task.status) {
-                                AssignmentStatus.PENDING -> AssignmentStatus.IN_PROGRESS
-                                AssignmentStatus.IN_PROGRESS -> AssignmentStatus.SUBMITTED
-                                AssignmentStatus.SUBMITTED -> AssignmentStatus.PENDING
-                            }
-                            val newTasks = payload.tasks.map { if (it.id == task.id) it.copy(status = newStatus) else it }
-                            viewModel.updateAssignmentPayload(entity, payload.copy(tasks = newTasks))
-                        }
+                        .combinedClickable(
+                            onClick = {
+                                val newStatus = when (task.status) {
+                                    AssignmentStatus.PENDING -> AssignmentStatus.IN_PROGRESS
+                                    AssignmentStatus.IN_PROGRESS -> AssignmentStatus.SUBMITTED
+                                    AssignmentStatus.SUBMITTED -> AssignmentStatus.PENDING
+                                }
+                                val newTasks = payload.tasks.map { if (it.id == task.id) it.copy(status = newStatus) else it }
+                                viewModel.updateAssignmentPayload(entity, payload.copy(tasks = newTasks))
+                            },
+                            onLongClick = { editingAssignment = task }
+                        )
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -75,16 +79,6 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                         Column(modifier = Modifier.weight(1f)) {
                             Text(task.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                             Text("[ ${task.priority} PRIORITY ]", fontFamily = FontFamily.Monospace, fontSize = androidx.compose.ui.unit.TextUnit(12f, androidx.compose.ui.unit.TextUnitType.Sp), color = MaterialTheme.colorScheme.primary)
-                        }
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(text = { Text("Edit") }, onClick = { expanded = false; editingAssignment = task })
-                                DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { expanded = false; viewModel.deleteAssignment(entity, task.id) })
-                            }
                         }
                     }
                 }
@@ -162,10 +156,10 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
                         FilterChip(selected = prio == p, onClick = { prio = p }, label = { Text("[ $p ]") })
                     }
                 }
-                Button(
-                    onClick = { viewModel.updateAssignment(entity, task.id, title, prio); editingAssignment = null },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { viewModel.updateAssignment(entity, task.id, title, prio); editingAssignment = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    OutlinedButton(onClick = { viewModel.deleteAssignment(entity, task.id); editingAssignment = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }

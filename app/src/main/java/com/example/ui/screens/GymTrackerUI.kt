@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -125,11 +127,10 @@ fun GymTrackerUI(entity: TrackerEntity, payload: GymPayload, viewModel: TrackerV
             historicalExercises = historicalExercises,
             initialExercise = null,
             onDismiss = { addingToSessionId = null },
-            onSave = { newEx ->
-                val newRoutines = payload.routines.map { s ->
-                    if (s.id == addingToSessionId) s.copy(exercises = s.exercises + newEx) else s
+            onSave = { exName, type, newSet, dur, dist ->
+                addingToSessionId?.let { sessionId ->
+                    viewModel.logGymSet(entity, sessionId, exName, type, newSet, dur, dist)
                 }
-                viewModel.updateGymPayload(entity, payload.copy(routines = newRoutines))
                 addingToSessionId = null
             }
         )
@@ -140,21 +141,26 @@ fun GymTrackerUI(entity: TrackerEntity, payload: GymPayload, viewModel: TrackerV
             historicalExercises = historicalExercises,
             initialExercise = ex,
             onDismiss = { editingExercise = null },
-            onSave = { updatedEx ->
-                viewModel.updateExercise(entity, sessionId, updatedEx)
+            onSave = { exName, type, newSet, dur, dist ->
+                viewModel.logGymSet(entity, sessionId, exName, type, newSet, dur, dist)
+                editingExercise = null
+            },
+            onDelete = {
+                viewModel.deleteExercise(entity, sessionId, ex.id)
                 editingExercise = null
             }
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GymExerciseSheet(
     historicalExercises: Set<String>,
     initialExercise: ExerciseLog?,
     onDismiss: () -> Unit,
-    onSave: (ExerciseLog) -> Unit
+    onSave: (String, ExerciseType, ExerciseSet?, Int?, Int?) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     var name by remember { mutableStateOf(initialExercise?.name ?: "") }
     var type by remember { mutableStateOf(initialExercise?.type ?: ExerciseType.REPS_ONLY) }
@@ -249,25 +255,18 @@ fun GymExerciseSheet(
                         onClick = {
                             if (key == "DONE") {
                                 if (name.isNotBlank()) {
-                                    val sets = if (type == ExerciseType.REPS_ONLY) {
-                                        listOf(ExerciseSet(
+                                    val newSet = if (type == ExerciseType.REPS_ONLY) {
+                                        ExerciseSet(
                                             id = initialExercise?.sets?.firstOrNull()?.id ?: UUID.randomUUID().toString(),
                                             reps = repsStr.toIntOrNull() ?: 0,
                                             weightKg = weightStr.toFloatOrNull()
-                                        ))
-                                    } else {
-                                        emptyList()
-                                    }
-
-                                    val ex = ExerciseLog(
-                                        id = initialExercise?.id ?: UUID.randomUUID().toString(),
-                                        name = name,
-                                        type = type,
-                                        sets = sets,
-                                        distanceMeters = if (type == ExerciseType.TIMED_DISTANCE) distanceStr.toIntOrNull() else null,
-                                        durationSeconds = if (type == ExerciseType.TIMED_DISTANCE || type == ExerciseType.STATIC_HOLD) durationStr.toIntOrNull() else null
-                                    )
-                                    onSave(ex)
+                                        )
+                                    } else null
+                                    
+                                    val dist = if (type == ExerciseType.TIMED_DISTANCE) distanceStr.toIntOrNull() else null
+                                    val dur = if (type == ExerciseType.TIMED_DISTANCE || type == ExerciseType.STATIC_HOLD) durationStr.toIntOrNull() else null
+                                    
+                                    onSave(name, type, newSet, dur, dist)
                                 }
                             } else if (key == "DEL") {
                                 when (activeField) {
@@ -293,11 +292,20 @@ fun GymExerciseSheet(
                     }
                 }
             }
+            if (onDelete != null) {
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RectangleShape
+                ) {
+                    Text("DELETE EXERCISE", color = MaterialTheme.colorScheme.error)
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MetricBox(label: String, value: String, isActive: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(

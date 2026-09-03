@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,7 +24,7 @@ import com.example.data.*
 import com.example.viewmodel.TrackerViewModel
 import java.util.UUID
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel: TrackerViewModel) {
     var showAddSubject by remember { mutableStateOf(false) }
@@ -45,7 +47,7 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                 var completedWeight = 0f
                 subject.modules.forEach { mod ->
                     if (mod.subTopics.isNotEmpty()) {
-                        val weightPerTopic = mod.weightage.toFloat() / mod.subTopics.size
+                        val weightPerTopic = if (mod.subTopics.isNotEmpty()) mod.weightage.toFloat() / mod.subTopics.size else 0f
                         completedWeight += mod.subTopics.count { it.isCompleted } * weightPerTopic
                     }
                 }
@@ -58,21 +60,16 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                         .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                         .padding(16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.combinedClickable(
+                            onClick = {},
+                            onLongClick = { editingSubject = subject }
+                        )
+                    ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(subject.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                             Text("[ ${subject.priority} PRIORITY ]", fontFamily = FontFamily.Monospace, fontSize = androidx.compose.ui.unit.TextUnit(12f, androidx.compose.ui.unit.TextUnitType.Sp), color = MaterialTheme.colorScheme.primary)
-                        }
-                        
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(text = { Text("Edit") }, onClick = { expanded = false; editingSubject = subject })
-                                DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { expanded = false; viewModel.deleteSubject(entity, subject.id) })
-                            }
                         }
                     }
 
@@ -90,36 +87,36 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
 
                     subject.modules.forEach { mod ->
                         Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = { editingModule = Pair(subject.id, mod) }
+                                    )
+                                    .padding(vertical = 4.dp)
+                            ) {
                                 Text("> ${mod.title} (W: ${mod.weightage})", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                var expanded by remember { mutableStateOf(false) }
-                                Box {
-                                    IconButton(onClick = { expanded = true }) {
-                                        Icon(Icons.Default.MoreVert, contentDescription = "More")
-                                    }
-                                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                        DropdownMenuItem(text = { Text("Edit") }, onClick = { expanded = false; editingModule = Pair(subject.id, mod) })
-                                        DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { expanded = false; viewModel.deleteModule(entity, subject.id, mod.id) })
-                                    }
-                                }
                             }
                             
                             mod.subTopics.forEach { st ->
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically, 
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 16.dp)
+                                        .combinedClickable(
+                                            onClick = {
+                                                viewModel.updateSubTopic(entity, subject.id, mod.id, st.id, st.title, !st.isCompleted)
+                                            },
+                                            onLongClick = { editingTopic = Triple(subject.id, mod.id, st) }
+                                        )
+                                ) {
                                     Checkbox(checked = st.isCompleted, onCheckedChange = { c ->
                                         viewModel.updateSubTopic(entity, subject.id, mod.id, st.id, st.title, c)
                                     })
                                     Text(st.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                    var expanded by remember { mutableStateOf(false) }
-                                    Box {
-                                        IconButton(onClick = { expanded = true }) {
-                                            Icon(Icons.Default.MoreVert, contentDescription = "More")
-                                        }
-                                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                            DropdownMenuItem(text = { Text("Edit") }, onClick = { expanded = false; editingTopic = Triple(subject.id, mod.id, st) })
-                                            DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { expanded = false; viewModel.deleteSubTopic(entity, subject.id, mod.id, st.id) })
-                                        }
-                                    }
                                 }
                             }
                             
@@ -200,10 +197,10 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                         FilterChip(selected = prio == p, onClick = { prio = p }, label = { Text("[ $p ]") })
                     }
                 }
-                Button(
-                    onClick = { viewModel.updateSubject(entity, sub.id, name, prio); editingSubject = null },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { viewModel.updateSubject(entity, sub.id, name, prio); editingSubject = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    OutlinedButton(onClick = { viewModel.deleteSubject(entity, sub.id); editingSubject = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }
@@ -222,7 +219,7 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                 Button(
                     onClick = { 
                         if (title.isNotBlank() && weight.isNotBlank()) {
-                            val newMods = sub.modules + Module(title = title, weightage = weight.toInt())
+                            val newMods = sub.modules + Module(title = title, weightage = weight.toIntOrNull() ?: 0)
                             viewModel.updateSyllabusPayload(entity, payload.copy(subjects = payload.subjects.map { if (it.id == sub.id) sub.copy(modules = newMods) else it }))
                             addingModuleToSubject = null
                         }
@@ -245,10 +242,10 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 // Weightage edit not explicitly asked in ViewModel mutations, but good to have.
                 // Wait, I only added updateModule(..., newTitle). Let me just edit the title.
-                Button(
-                    onClick = { viewModel.updateModule(entity, subId, mod.id, title); editingModule = null },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { viewModel.updateModule(entity, subId, mod.id, title); editingModule = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    OutlinedButton(onClick = { viewModel.deleteModule(entity, subId, mod.id); editingModule = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }
@@ -293,10 +290,10 @@ fun SyllabusTrackerUI(entity: TrackerEntity, payload: SyllabusPayload, viewModel
             ) {
                 Text("Edit Topic", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
-                Button(
-                    onClick = { viewModel.updateSubTopic(entity, subId, modId, st.id, title, st.isCompleted); editingTopic = null },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) { Text("SAVE") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { viewModel.updateSubTopic(entity, subId, modId, st.id, title, st.isCompleted); editingTopic = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("SAVE") }
+                    OutlinedButton(onClick = { viewModel.deleteSubTopic(entity, subId, modId, st.id); editingTopic = null }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("DELETE", color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }
