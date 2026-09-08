@@ -20,6 +20,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.lazy.rememberLazyListState
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -49,6 +54,9 @@ fun BurnRateTrackerUI(
     var showLimitDialog by remember { mutableStateOf(false) }
     var showAddTagDialog by remember { mutableStateOf(false) }
     var tagToDelete by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val showScrollToLatest by remember { derivedStateOf { listState.firstVisibleItemIndex > 2 } }
 
     val tags = listOf("GENERAL", "FOOD", "TRANSPORT") + payload.customTags.toList()
     if (selectedTag !in tags) {
@@ -144,10 +152,12 @@ fun BurnRateTrackerUI(
 
         // Ledger
         val dateFormat = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault())
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            reverseLayout = true
-        ) {
+        Box(modifier = Modifier.weight(1f)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                reverseLayout = true
+            ) {
             items(payload.transactions, key = { it.id }) { tx ->
                 Row(
                     modifier = Modifier
@@ -191,7 +201,16 @@ fun BurnRateTrackerUI(
                     }
                 }
             }
-        }
+            } // end LazyColumn
+        
+            ScrollToLatestButton(
+            visible = showScrollToLatest,
+            onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
+        } // ends Box
         
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -333,5 +352,31 @@ fun BurnRateTrackerUI(
                 TextButton(onClick = { tagToDelete = null }) { Text("CANCEL") }
             }
         )
+    }
+}
+@Composable
+fun ScrollToLatestButton(
+    visible: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RectangleShape)
+                .border(2.dp, MaterialTheme.colorScheme.outline, RectangleShape)
+                .clickable { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Jump to Latest",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }

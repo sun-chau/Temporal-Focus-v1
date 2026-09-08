@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,10 +40,16 @@ fun VolumeTrackerUI(
     var editingResource by remember { mutableStateOf<VolumeResource?>(null) }
     var numpadResource by remember { mutableStateOf<VolumeResource?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Button(
+            onClick = { showAddDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            shape = RectangleShape
+        ) {
+            Text("+ ADD RESOURCE", fontWeight = FontWeight.Bold)
+        }
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp)
+            modifier = Modifier.weight(1f)
         ) {
             items(payload.resources, key = { it.id }) { resource ->
                 Column(
@@ -74,20 +81,12 @@ fun VolumeTrackerUI(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(12.dp)
+                            .height(12.dp),
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Square
                     )
                 }
                 Divider()
             }
-        }
-
-        FloatingActionButton(
-            onClick = { showAddDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add Resource")
         }
     }
 
@@ -195,7 +194,7 @@ fun VolumeNumpadSheet(
                             .padding(4.dp)
                             .background(
                                 color = if (key == "LOG") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.medium
+                                shape = RectangleShape
                             )
                             .clickable {
                                 if (key == "LOG") {
@@ -268,14 +267,13 @@ fun ResourceEditDialog(
             }
         },
         confirmButton = {
+            val hasChanges = title != initialTitle || total != initialTotal || metric != initialMetric
+            val t = total.toIntOrNull()
+            val isValid = title.isNotBlank() && t != null && t > 0
             TextButton(
-                onClick = {
-                    val t = total.toIntOrNull()
-                    if (title.isNotBlank() && t != null && t > 0) {
-                        onSave(title, t, metric.ifBlank { "Units" })
-                    }
-                }
-            ) { Text("SAVE") }
+                onClick = { if (isValid) onSave(title, t!!, metric.ifBlank { "Units" }) },
+                enabled = hasChanges && isValid
+            ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
             Row {

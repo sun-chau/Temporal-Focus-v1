@@ -47,9 +47,11 @@ data class Deliverable(
     val title: String,
     val status: AssignmentStatus = AssignmentStatus.PENDING,
     val deadlineEpoch: Long,
-    val priority: PriorityLevel = PriorityLevel.MID
+    val priority: PriorityLevel = PriorityLevel.MID,
+    val recurrence: Recurrence = Recurrence.NONE
 )
 
+enum class Recurrence { NONE, WEEKLY }
 enum class AssignmentStatus { PENDING, IN_PROGRESS, SUBMITTED }
 
 data class ExerciseSet(

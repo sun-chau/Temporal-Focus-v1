@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.*
@@ -29,10 +30,16 @@ fun BinaryTrackerUI(
     var editingDiscipline by remember { mutableStateOf<BinaryDiscipline?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Button(
+            onClick = { showAddDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            shape = RectangleShape
+        ) {
+            Text("+ ADD DISCIPLINE", fontWeight = FontWeight.Bold)
+        }
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp)
+            modifier = Modifier.weight(1f)
         ) {
             items(payload.disciplines, key = { it.id }) { discipline ->
                 val isDoneToday = discipline.completedDates.contains(today)
@@ -72,15 +79,6 @@ fun BinaryTrackerUI(
                 }
                 Divider()
             }
-        }
-
-        FloatingActionButton(
-            onClick = { showAddDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add Discipline")
         }
     }
 
@@ -135,11 +133,11 @@ fun DisciplineEditDialog(
             )
         },
         confirmButton = {
+            val hasChanges = name != initialName && name.isNotBlank()
             TextButton(
-                onClick = {
-                    if (name.isNotBlank()) onSave(name)
-                }
-            ) { Text("SAVE") }
+                onClick = { if (name.isNotBlank()) onSave(name) },
+                enabled = hasChanges
+            ) { Text(if (hasChanges) "SAVE CHANGES" else "NO CHANGES", fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
             Row {
