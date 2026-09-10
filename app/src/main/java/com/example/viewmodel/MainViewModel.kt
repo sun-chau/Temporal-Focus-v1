@@ -521,14 +521,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addQuickDeadline(name: String, time: Long?) {
+    fun addQuickDeadline(name: String, time: Long?, priority: String = "Normal") {
         viewModelScope.launch {
             val targetTime = time ?: (System.currentTimeMillis() + 86400000L)
             val task = com.example.data.TimerTask(
                 name = name,
                 targetDateTime = targetTime,
                 deadlineDateTime = time,
-                priority = "Normal",
+                priority = priority,
                 labels = "Reminder"
             )
             repository.insertTask(task)

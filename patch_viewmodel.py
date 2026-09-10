@@ -1,36 +1,35 @@
 import re
 
-with open('app/src/main/java/com/example/viewmodel/MainViewModel.kt', 'r') as f:
+with open("app/src/main/java/com/example/viewmodel/MainViewModel.kt", "r") as f:
     content = f.read()
 
-# Add to UiState
-if 'val showQuickReminderSheet: Boolean = false' not in content:
-    content = content.replace('val showSeconds: Boolean = true,', 'val showSeconds: Boolean = true,\n    val showQuickReminderSheet: Boolean = false,')
-
-# Add setQuickReminderSheet
-if 'fun setQuickReminderSheet' not in content:
-    content = content.replace('fun setCreatingChronometer(isCreating: Boolean) {', 'fun setQuickReminderSheet(show: Boolean) {\n        _uiState.update { it.copy(showQuickReminderSheet = show) }\n    }\n\n    fun setCreatingChronometer(isCreating: Boolean) {')
-
-# Add addQuickReminder
-if 'fun addQuickReminder' not in content:
-    content = content.replace('fun updateTimerTask(task: TimerTask) {', '''fun addQuickReminder(name: String, time: Long?) {
+target = """    fun addQuickDeadline(name: String, time: Long?) {
         viewModelScope.launch {
             val targetTime = time ?: (System.currentTimeMillis() + 86400000L)
             val task = com.example.data.TimerTask(
                 name = name,
                 targetDateTime = targetTime,
-                reminderDateTime = time,
+                deadlineDateTime = time,
                 priority = "Normal",
-                tags = "None"
-            )
-            repository.insertTask(task)
-            if (time != null) {
-                com.example.receiver.AlarmScheduler.scheduleAlarmsForTask(getApplication(), task, appSettings.chronometerDeadlineOffsetMinutes)
-            }
-        }
-    }
+                labels = "Reminder"
+            )"""
 
-    fun updateTimerTask(task: TimerTask) {''')
+replacement = """    fun addQuickDeadline(name: String, time: Long?, priority: String = "Normal") {
+        viewModelScope.launch {
+            val targetTime = time ?: (System.currentTimeMillis() + 86400000L)
+            val task = com.example.data.TimerTask(
+                name = name,
+                targetDateTime = targetTime,
+                deadlineDateTime = time,
+                priority = priority,
+                labels = "Reminder"
+            )"""
 
-with open('app/src/main/java/com/example/viewmodel/MainViewModel.kt', 'w') as f:
-    f.write(content)
+if target in content:
+    content = content.replace(target, replacement)
+    with open("app/src/main/java/com/example/viewmodel/MainViewModel.kt", "w") as f:
+        f.write(content)
+    print("Patched MainViewModel")
+else:
+    print("Could not find target in MainViewModel")
+

@@ -93,5 +93,5 @@ data class BinaryDiscipline(val id: String, val name: String, val completedDates
 data class VolumePayload(val resources: List<VolumeResource> = emptyList())
 data class VolumeResource(val id: String, val title: String, val currentProgress: Int, val totalProgress: Int, val metricLabel: String)
 
-data class BurnRatePayload(val monthlyLimit: Double = 0.0, val customTags: Set<String> = emptySet(), val transactions: List<Transaction> = emptyList())
+data class BurnRatePayload(val monthlyLimit: Double = 0.0, val cycleStartDay: Int = 1, val customTags: Set<String> = emptySet(), val transactions: List<Transaction> = emptyList())
 data class Transaction(val id: String, val amount: Double, val timestampEpoch: Long, val tag: String)

@@ -528,6 +528,27 @@ fun JournalEditorScreen(
                             )
                         }
                     }
+                    var showDeleteConfirm by remember { mutableStateOf(false) }
+                    if (showDeleteConfirm) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteConfirm = false },
+                            title = { Text("Delete Entry") },
+                            text = { Text("Are you sure you want to delete this journal entry?") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    viewModel.deleteJournalEntry(entry)
+                                    hasBeenSaved = true // prevent auto-save on close
+                                    onClose()
+                                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+                            }
+                        )
+                    }
+                    IconButton(onClick = { showDeleteConfirm = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
                     IconButton(onClick = { isEditMode = !isEditMode }) {
                         Icon(
                             imageVector = if (isEditMode) Icons.Default.Visibility else Icons.Default.Edit,
@@ -635,13 +656,23 @@ fun JournalEditorScreen(
                                         val prevLine = newValue.text.substring(prevLineStart, newValue.selection.start - 1)
                                         val match = Regex("^(\\s*[-*]\\s+|\\s*\\d+\\.\\s+)").find(prevLine)
                                         if (match != null) {
-                                            val prefix = match.value
-                                            val before = newValue.text.substring(0, newValue.selection.start)
-                                            val after = newValue.text.substring(newValue.selection.start)
-                                            finalValue = TextFieldValue(
-                                                text = before + prefix + after,
-                                                selection = TextRange(newValue.selection.start + prefix.length)
-                                            )
+                                            if (match.value == prevLine) {
+                                                // Empty list item: user pressed enter again. Remove the list prefix.
+                                                val before = newValue.text.substring(0, prevLineStart)
+                                                val after = newValue.text.substring(newValue.selection.start)
+                                                finalValue = TextFieldValue(
+                                                    text = before + "\n" + after,
+                                                    selection = TextRange(prevLineStart + 1)
+                                                )
+                                            } else {
+                                                val prefix = match.value
+                                                val before = newValue.text.substring(0, newValue.selection.start)
+                                                val after = newValue.text.substring(newValue.selection.start)
+                                                finalValue = TextFieldValue(
+                                                    text = before + prefix + after,
+                                                    selection = TextRange(newValue.selection.start + prefix.length)
+                                                )
+                                            }
                                         }
                                     }
                                 }

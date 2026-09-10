@@ -118,6 +118,8 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun addBurnRateTag(tracker: TrackerEntity, newTag: String) {
+        val defaultTags = setOf("GENERAL", "FOOD", "TRANSPORT")
+        if (newTag.uppercase() in defaultTags) return
         val payload = getParsedPayload(tracker) as? BurnRatePayload ?: return
         val updatedTags = payload.customTags + newTag.uppercase()
         updateBurnRatePayload(tracker, payload.copy(customTags = updatedTags))
@@ -354,6 +356,31 @@ class TrackerViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             trackerDao.updateTracker(tracker)
         }
+    }
+
+
+    fun getActiveCycleTransactions(payload: BurnRatePayload): List<Transaction> {
+        val now = java.time.ZonedDateTime.now()
+        val currentDay = now.dayOfMonth
+        val startDay = payload.cycleStartDay.coerceIn(1, 28)
+        
+        val cycleStart = if (currentDay >= startDay) {
+            now.withDayOfMonth(startDay).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        } else {
+            now.minusMonths(1).withDayOfMonth(startDay).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        }
+        val cycleEnd = cycleStart.plusMonths(1)
+        
+        val startEpoch = cycleStart.toInstant().toEpochMilli()
+        val endEpoch = cycleEnd.toInstant().toEpochMilli()
+        
+        return payload.transactions.filter { it.timestampEpoch in startEpoch until endEpoch }
+    }
+
+    fun updateTransaction(tracker: TrackerEntity, updatedTx: Transaction) {
+        val payload = getParsedPayload(tracker) as? BurnRatePayload ?: return
+        val newTxs = payload.transactions.map { if (it.id == updatedTx.id) updatedTx else it }
+        updateBurnRatePayload(tracker, payload.copy(transactions = newTxs))
     }
 
     fun deleteTracker(tracker: TrackerEntity) {

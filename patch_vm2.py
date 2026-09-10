@@ -1,24 +1,36 @@
 import re
 
-with open('app/src/main/java/com/example/viewmodel/MainViewModel.kt', 'r') as f:
+with open("app/src/main/java/com/example/viewmodel/TrackerViewModel.kt", "r") as f:
     content = f.read()
 
-start_idx = content.find('fun deleteDailySchedule(schedule: DailyScheduleTask) {')
-end_idx = content.find('fun insertJournalEntry', start_idx)
-
-if start_idx != -1 and end_idx != -1:
-    new_func = """    fun deleteDailySchedule(schedule: DailyScheduleTask, deleteEntireSeries: Boolean = false) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val db = com.example.data.AppDatabase.getDatabase(getApplication())
-            if (deleteEntireSeries && schedule.seriesId != null) {
-                db.dailyScheduleDao().deleteSeries(schedule.seriesId)
-            } else {
-                db.dailyScheduleDao().deleteSchedule(schedule)
-            }
-            recalculateAllLanes(db)
+new_funcs = """
+    fun getActiveCycleTransactions(payload: BurnRatePayload): List<Transaction> {
+        val now = java.time.ZonedDateTime.now()
+        val currentDay = now.dayOfMonth
+        val startDay = payload.cycleStartDay.coerceIn(1, 28)
+        
+        val cycleStart = if (currentDay >= startDay) {
+            now.withDayOfMonth(startDay).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        } else {
+            now.minusMonths(1).withDayOfMonth(startDay).withHour(0).withMinute(0).withSecond(0).withNano(0)
         }
+        val cycleEnd = cycleStart.plusMonths(1)
+        
+        val startEpoch = cycleStart.toInstant().toEpochMilli()
+        val endEpoch = cycleEnd.toInstant().toEpochMilli()
+        
+        return payload.transactions.filter { it.timestampEpoch in startEpoch until endEpoch }
     }
-    
-"""
-    with open('app/src/main/java/com/example/viewmodel/MainViewModel.kt', 'w') as f:
-        f.write(content[:start_idx] + new_func + content[end_idx:])
+
+    fun updateTransaction(tracker: TrackerEntity, updatedTx: Transaction) {
+        val payload = getParsedPayload(tracker) as? BurnRatePayload ?: return
+        val newTxs = payload.transactions.map { if (it.id == updatedTx.id) updatedTx else it }
+        updateBurnRatePayload(tracker, payload.copy(transactions = newTxs))
+    }
+
+    fun deleteTracker(tracker: TrackerEntity) {"""
+
+content = content.replace("    fun deleteTracker(tracker: TrackerEntity) {", new_funcs)
+
+with open("app/src/main/java/com/example/viewmodel/TrackerViewModel.kt", "w") as f:
+    f.write(content)

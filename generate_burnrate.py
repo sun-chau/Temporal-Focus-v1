@@ -1,4 +1,6 @@
-package com.example.ui.screens
+import os
+
+new_code = """package com.example.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -587,3 +589,7 @@ fun ScrollToLatestButton(
         }
     }
 }
+"""
+
+with open("app/src/main/java/com/example/ui/screens/BurnRateTrackerUI.kt", "w") as f:
+    f.write(new_code)

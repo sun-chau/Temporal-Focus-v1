@@ -9,20 +9,39 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.viewmodel.MainViewModel
 import com.example.viewmodel.UiState
+import com.example.util.parseTerminalCommand
+import androidx.compose.animation.AnimatedVisibility
+import java.text.SimpleDateFormat
+import java.util.Locale
+import androidx.compose.foundation.text.KeyboardActions
+import com.example.ui.components.UniversalDatePickerDialog
+import com.example.ui.components.UniversalTimePickerDialog
+import java.util.Calendar
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun HomeScreen(
@@ -32,6 +51,18 @@ fun HomeScreen(
     onProfileClick: () -> Unit
 ) {
     val context = LocalContext.current
+    
+    var rawInput by remember { mutableStateOf("") }
+    val parsedState by remember { derivedStateOf { parseTerminalCommand(rawInput) } }
+    
+    var deadlineTimeMillis by remember { mutableStateOf<Long?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var tempDateMillis by remember { mutableStateOf(0L) }
+    val focusRequester = remember { FocusRequester() }
+    
+    val activeTasks by viewModel.activeTasks.collectAsState()
+    val quickDeadlines = activeTasks.filter { it.labels == "Reminder" }.sortedBy { it.deadlineDateTime ?: Long.MAX_VALUE }
     
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -58,27 +89,167 @@ fun HomeScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            if (quickDeadlines.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "[ NO ACTIVE REMINDERS ]",
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(quickDeadlines, key = { it.id }) { task ->
+                    com.example.ui.components.TerminalReminderRow(
+                        task = task,
+                        use24HourFormat = uiState.use24HourFormat,
+                        onComplete = { viewModel.markTaskComplete(it) }
+                    )
+                }
+            }
+        }
+        
+        // The Tactical Feedback HUD
+        AnimatedVisibility(visible = parsedState.epochMillis != null || parsedState.priority != "Normal") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (parsedState.epochMillis != null) {
+                    val format = SimpleDateFormat("HH:mm MMM dd", Locale.getDefault())
+                    val timeStr = format.format(parsedState.epochMillis)
+                    Text(
+                        text = "[ @ $timeStr ]",
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .border(1.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+                if (parsedState.priority != "Normal") {
+                    val color = if (parsedState.priority == "CRITICAL") MaterialTheme.colorScheme.error else Color(0xFFFFA000) // Amber for MID
+                    Text(
+                        text = "[ ! ${parsedState.priority} ]",
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = color,
+                        modifier = Modifier
+                            .border(1.dp, color, RectangleShape)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+        }
+        
+        // The Terminal Input Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = rawInput,
+                onValueChange = { rawInput = it },
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester),
+                placeholder = { 
+                    Text(
+                        "> QUICK REMINDER...", 
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    ) 
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val finalTime = parsedState.epochMillis ?: deadlineTimeMillis
+                        if (parsedState.cleanTitle.isNotBlank()) {
+                            viewModel.addQuickDeadline(parsedState.cleanTitle, finalTime, parsedState.priority)
+                            rawInput = ""
+                            deadlineTimeMillis = null
+                        }
+                    }
+                ),
+                shape = RectangleShape,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+            
+            IconButton(onClick = { showDatePicker = true }) {
+                Icon(
+                    imageVector = Icons.Outlined.Alarm,
+                    contentDescription = "Set Deadline",
+                    tint = if (deadlineTimeMillis != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            IconButton(
+                onClick = {
+                    val finalTime = parsedState.epochMillis ?: deadlineTimeMillis
+                    viewModel.addQuickDeadline(parsedState.cleanTitle, finalTime, parsedState.priority)
+                    rawInput = ""
+                    deadlineTimeMillis = null
+                },
+                enabled = parsedState.cleanTitle.isNotBlank()
             ) {
                 Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Coming Soon",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    imageVector = Icons.AutoMirrored.Filled.Send, 
+                    contentDescription = "Save",
+                    tint = if (parsedState.cleanTitle.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 )
             }
         }
+    }
+    
+    if (showDatePicker) {
+        UniversalDatePickerDialog(
+            initialDateMillis = System.currentTimeMillis(),
+            onDateSelected = { dateMillis ->
+                tempDateMillis = dateMillis
+                showDatePicker = false
+                showTimePicker = true
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+    
+    if (showTimePicker) {
+        UniversalTimePickerDialog(
+            initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+            initialMinute = Calendar.getInstance().get(Calendar.MINUTE),
+            is24Hour = uiState.use24HourFormat,
+            onDismiss = { showTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val cal = Calendar.getInstance()
+                cal.timeInMillis = tempDateMillis
+                cal.set(Calendar.HOUR_OF_DAY, hour)
+                cal.set(Calendar.MINUTE, minute)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                
+                deadlineTimeMillis = cal.timeInMillis
+                showTimePicker = false
+                focusRequester.requestFocus()
+            }
+        )
     }
 }

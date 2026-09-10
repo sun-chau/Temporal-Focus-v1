@@ -213,9 +213,11 @@ fun AssignmentTrackerUI(entity: TrackerEntity, payload: AssignmentPayload, viewM
 fun TerminalWheelPicker(
     items: List<String>,
     onItemSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialSelection: String? = null
 ) {
-    val listState = rememberLazyListState()
+    val initialIndex = initialSelection?.let { items.indexOf(it).takeIf { idx -> idx >= 0 } } ?: 0
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
     
     val selectedIndex by remember {

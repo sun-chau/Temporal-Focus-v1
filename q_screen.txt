@@ -1,5 +1,4 @@
 package com.example.ui.screens
-import androidx.compose.foundation.border
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -157,7 +156,7 @@ fun QuickDeadlinesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (quickDeadlines.isEmpty()) {
                     item {
@@ -170,12 +169,43 @@ fun QuickDeadlinesScreen(
                         }
                     }
                 } else {
-                    items(quickDeadlines, key = { it.id }) { task ->
-                        com.example.ui.components.TerminalReminderRow(
-                            task = task,
-                            use24HourFormat = uiState.use24HourFormat,
-                            onComplete = { viewModel.markTaskComplete(it) }
-                        )
+                    items(quickDeadlines) { task ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = task.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    val timeString = task.deadlineDateTime?.let {
+                                        SimpleDateFormat(if (uiState.use24HourFormat) "MMM d, HH:mm" else "MMM d, h:mm a", Locale.getDefault()).format(Date(it))
+                                    } ?: "No time set"
+                                    
+                                    Text(
+                                        text = timeString,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.markTaskComplete(task) }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.CheckCircle,
+                                        contentDescription = "Mark Complete",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -279,7 +309,7 @@ fun CompletedRemindersScreen(use24HourFormat: Boolean,
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (completedReminders.isEmpty()) {
                 item {
@@ -292,77 +322,69 @@ fun CompletedRemindersScreen(use24HourFormat: Boolean,
                     }
                 }
             } else {
-                items(completedReminders, key = { it.id }) { task ->
+                items(completedReminders) { task ->
                     val isSelected = task.id in selectedTaskIds
-                    val threatColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     
-                    val priorityTag = when (task.priority) {
-                        "CRITICAL" -> "[ CRITICAL ] "
-                        "MID" -> "[ MID ] "
-                        "LOW" -> "[ LOW ] "
-                        else -> ""
-                    }
-                    val nameText = "$priorityTag${task.name}".uppercase(Locale.getDefault())
-
-                    val timeString = task.completedAt?.let {
-                        val format = if (use24HourFormat) "HH:mm MMM d" else "h:mm a MMM d"
-                        "[ COMPLETED: " + SimpleDateFormat(format, Locale.getDefault()).format(Date(it)).uppercase(Locale.getDefault()) + " ]"
-                    } ?: "[ COMPLETED ]"
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else threatColor, androidx.compose.ui.graphics.RectangleShape)
-                            .clickable(
-                                enabled = isSelectionMode,
-                                onClick = {
-                                    if (isSelected) {
-                                        selectedTaskIds = selectedTaskIds - task.id
-                                    } else {
-                                        selectedTaskIds = selectedTaskIds + task.id
-                                    }
-                                }
-                            )
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) 
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
+                            else 
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
                     ) {
-                        if (isSelectionMode) {
-                            Text(
-                                text = if (isSelected) "[ X ]" else "[   ]",
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else threatColor,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    enabled = isSelectionMode,
+                                    onClick = {
+                                        if (isSelected) {
+                                            selectedTaskIds = selectedTaskIds - task.id
+                                        } else {
+                                            selectedTaskIds = selectedTaskIds + task.id
+                                        }
+                                    }
+                                )
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (isSelectionMode) {
+                                Icon(
+                                    imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                                    contentDescription = "Select",
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(end = 16.dp)
+                                )
+                            }
                         
-                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                            Text(
-                                text = nameText,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = threatColor
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = timeString,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = threatColor
-                            )
-                        }
-                        if (!isSelectionMode) {
-                            Text(
-                                text = "[ REVERT ]",
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.clickable { onUnmarkComplete(task) }.padding(4.dp)
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = task.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                val timeString = task.completedAt?.let {
+                                    "Completed: " + SimpleDateFormat(if (use24HourFormat) "MMM d, HH:mm" else "MMM d, h:mm a", Locale.getDefault()).format(Date(it))
+                                } ?: "Completed"
+                                
+                                Text(
+                                    text = timeString,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (!isSelectionMode) {
+                                IconButton(onClick = { onUnmarkComplete(task) }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Refresh,
+                                        contentDescription = "Unmark Complete",
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -370,3 +392,4 @@ fun CompletedRemindersScreen(use24HourFormat: Boolean,
         }
     }
 }
+

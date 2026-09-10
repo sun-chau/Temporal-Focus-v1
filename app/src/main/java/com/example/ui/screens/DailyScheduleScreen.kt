@@ -1,5 +1,7 @@
 @file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.example.ui.screens
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.runtime.getValue
 
 import androidx.compose.ui.tooling.preview.Preview
@@ -196,7 +198,8 @@ fun DailyScheduleScreen(viewModel: MainViewModel, uiState: UiState, onMenuClick:
                             }
                         },
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.background
+                        contentColor = MaterialTheme.colorScheme.background,
+                        shape = RectangleShape
                     ) {
                         Icon(androidx.compose.material.icons.Icons.Default.Today, contentDescription = "Now")
                     }
@@ -204,7 +207,7 @@ fun DailyScheduleScreen(viewModel: MainViewModel, uiState: UiState, onMenuClick:
                 FloatingActionButton(onClick = { 
                     viewModel.clearDailyScheduleDraft()
                     viewModel.setTimerMode(com.example.viewmodel.TimerMode.CREATE_DAILY_SCHEDULE)
-                }, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background) {
+                }, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background, shape = RectangleShape) {
                     Icon(Icons.Default.Add, contentDescription = "Add Schedule")
                 }
             }
@@ -451,17 +454,16 @@ fun DailyScheduleScreen(viewModel: MainViewModel, uiState: UiState, onMenuClick:
                                     .offset(x = ghostXOffset, y = ghostYOffset)
                                     .width(ghostWidth)
                                     .height(72.dp)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RectangleShape)
                                     .background(bgColor)
                                     .drawBehind {
                                         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
                                             width = 2.dp.toPx(),
                                             pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                                         )
-                                        drawRoundRect(
+                                        drawRect(
                                             color = borderColor,
-                                            style = stroke,
-                                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                                            style = stroke
                                         )
                                     }
                             
@@ -469,7 +471,8 @@ fun DailyScheduleScreen(viewModel: MainViewModel, uiState: UiState, onMenuClick:
                                 val startStr = getSemanticTime(ghostStartTimeMillis, pageDateMillis, uiState.use24HourFormat)
                                 val endStr = getSemanticTime(ghostEndTimeMillis, pageDateMillis, uiState.use24HourFormat)
                                 androidx.compose.material3.Text(
-                                    text = "$startStr - $endStr",
+                                    text = "[ $startStr - $endStr ]",
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                     color = if (isWarning) androidx.compose.ui.graphics.Color.Red else androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                                     modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.Center)
@@ -647,29 +650,29 @@ fun DateNavigator(pagerState: PagerState, todayMillis: Long, coroutineScope: kot
             val dateMillis = todayMillis + dayOffset * 24 * 60 * 60 * 1000L
             val cal = Calendar.getInstance().apply { timeInMillis = dateMillis }
             val dayOfWeek = when (cal.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.SUNDAY -> "Sun"
-                Calendar.MONDAY -> "Mon"
-                Calendar.TUESDAY -> "Tue"
-                Calendar.WEDNESDAY -> "Wed"
-                Calendar.THURSDAY -> "Thu"
-                Calendar.FRIDAY -> "Fri"
-                Calendar.SATURDAY -> "Sat"
+                Calendar.SUNDAY -> "SUN"
+                Calendar.MONDAY -> "MON"
+                Calendar.TUESDAY -> "TUE"
+                Calendar.WEDNESDAY -> "WED"
+                Calendar.THURSDAY -> "THU"
+                Calendar.FRIDAY -> "FRI"
+                Calendar.SATURDAY -> "SAT"
                 else -> ""
             }
             val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH).toString()
             val monthStr = when (cal.get(Calendar.MONTH)) {
-                Calendar.JANUARY -> "Jan"
-                Calendar.FEBRUARY -> "Feb"
-                Calendar.MARCH -> "Mar"
-                Calendar.APRIL -> "Apr"
-                Calendar.MAY -> "May"
-                Calendar.JUNE -> "Jun"
-                Calendar.JULY -> "Jul"
-                Calendar.AUGUST -> "Aug"
-                Calendar.SEPTEMBER -> "Sep"
-                Calendar.OCTOBER -> "Oct"
-                Calendar.NOVEMBER -> "Nov"
-                Calendar.DECEMBER -> "Dec"
+                Calendar.JANUARY -> "JAN"
+                Calendar.FEBRUARY -> "FEB"
+                Calendar.MARCH -> "MAR"
+                Calendar.APRIL -> "APR"
+                Calendar.MAY -> "MAY"
+                Calendar.JUNE -> "JUN"
+                Calendar.JULY -> "JUL"
+                Calendar.AUGUST -> "AUG"
+                Calendar.SEPTEMBER -> "SEP"
+                Calendar.OCTOBER -> "OCT"
+                Calendar.NOVEMBER -> "NOV"
+                Calendar.DECEMBER -> "DEC"
                 else -> ""
             }
             
@@ -677,19 +680,24 @@ fun DateNavigator(pagerState: PagerState, todayMillis: Long, coroutineScope: kot
             val isSelected = pagerState.currentPage == absolutePage
             val isToday = absolutePage == actualTodayPage
             
+            val borderStroke = when {
+                isToday -> BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant)
+                !isSelected -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                else -> BorderStroke(0.dp, Color.Transparent)
+            }
+            
             Column(
                 modifier = Modifier
                     .width(56.dp)
                     .height(84.dp)
-                    .clip(RoundedCornerShape(32.dp))
+                    .clip(RectangleShape)
                     .background(
                         if (isSelected) MaterialTheme.colorScheme.primary 
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        else Color.Transparent
                     )
                     .border(
-                        if (isToday && !isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) 
-                        else BorderStroke(0.dp, Color.Transparent),
-                        RoundedCornerShape(32.dp)
+                        borderStroke,
+                        RectangleShape
                     )
                     .clickable { 
                         coroutineScope.launch {
@@ -701,16 +709,19 @@ fun DateNavigator(pagerState: PagerState, todayMillis: Long, coroutineScope: kot
             ) {
                 Text(
                     text = monthStr,
+                    fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = dayOfMonth,
+                    fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = dayOfWeek,
+                    fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -773,15 +784,15 @@ fun TimelineGrid(totalLanes: Int) {
     
     for (hour in 0..24) {
         val offset = (hour * 60 * 2.0).dp
-        // Major tick line (thicker)
+        // Major tick line
         Box(
             modifier = Modifier
                 .offset(x = offset)
-                .width(2.dp)
+                .width(1.dp)
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
         )
-        // Minor tick line (thinner)
+        // Minor tick line
         if (hour < 24) {
             val minorOffset = offset + (30 * 2.0).dp
             Box(
@@ -789,7 +800,7 @@ fun TimelineGrid(totalLanes: Int) {
                     .offset(x = minorOffset)
                     .width(1.dp)
                     .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
             )
         }
     }
@@ -802,7 +813,7 @@ fun TimelineGrid(totalLanes: Int) {
                 .offset(y = offset)
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
         )
     }
 }
@@ -929,57 +940,41 @@ fun ScheduleBlock(
     )
 
     val blockBorderWidth = if (isUncategorized) 3.dp else 2.dp
-
-    val shape = RoundedCornerShape(
-        topStart = if (isBleedLeft) 0.dp else 8.dp,
-        bottomStart = if (isBleedLeft) 0.dp else 8.dp,
-        topEnd = if (isBleedRight) 0.dp else 8.dp,
-        bottomEnd = if (isBleedRight) 0.dp else 8.dp
-    )
+    val activeBorderColor = if (isWarning) Color.Red else MaterialTheme.colorScheme.primary
+    val finalBorderColor = if (elevation > 0.dp) activeBorderColor else blockBorderColor
+    val finalBgColor = if (elevation > 0.dp) blockBackgroundColor.copy(alpha = blockBackgroundColor.alpha + 0.15f) else blockBackgroundColor
+    val finalBorderWidth = if (elevation > 0.dp) 2.dp else blockBorderWidth
+    
     Box(
-        modifier = modifier.shadow(elevation, shape, clip = false)
+        modifier = modifier
     ) {
         
         Box(
             modifier = Modifier
                 .width(blockWidth)
                 .fillMaxHeight()
-                .clip(shape)
-                .background(blockBackgroundColor)
+                .background(finalBgColor)
                 .drawBehind {
-                    val stroke = androidx.compose.ui.graphics.drawscope.Stroke(blockBorderWidth.toPx())
-                    val halfStroke = blockBorderWidth.toPx() / 2f
-                    val cornerRadius = 8.dp.toPx()
+                    val stroke = androidx.compose.ui.graphics.drawscope.Stroke(finalBorderWidth.toPx())
+                    val halfStroke = finalBorderWidth.toPx() / 2f
                     
                     val path = androidx.compose.ui.graphics.Path().apply {
                         if (isBleedLeft) {
                             moveTo(0f, halfStroke)
                         } else {
-                            moveTo(cornerRadius, halfStroke)
+                            moveTo(halfStroke, halfStroke)
                         }
                         
                         // Top edge
                         if (isBleedRight) {
                             lineTo(size.width, halfStroke)
                         } else {
-                            lineTo(size.width - cornerRadius, halfStroke)
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(size.width - 2 * cornerRadius, halfStroke, size.width - halfStroke, 2 * cornerRadius - halfStroke),
-                                startAngleDegrees = -90f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
+                            lineTo(size.width - halfStroke, halfStroke)
                         }
                         
                         // Right edge
                         if (!isBleedRight) {
-                            lineTo(size.width - halfStroke, size.height - cornerRadius)
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(size.width - 2 * cornerRadius, size.height - 2 * cornerRadius + halfStroke, size.width - halfStroke, size.height - halfStroke),
-                                startAngleDegrees = 0f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
+                            lineTo(size.width - halfStroke, size.height - halfStroke)
                         } else {
                             moveTo(size.width, size.height - halfStroke)
                         }
@@ -988,29 +983,17 @@ fun ScheduleBlock(
                         if (isBleedLeft) {
                             lineTo(0f, size.height - halfStroke)
                         } else {
-                            lineTo(cornerRadius, size.height - halfStroke)
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(halfStroke, size.height - 2 * cornerRadius + halfStroke, 2 * cornerRadius - halfStroke, size.height - halfStroke),
-                                startAngleDegrees = 90f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
+                            lineTo(halfStroke, size.height - halfStroke)
                         }
                         
                         // Left edge
                         if (!isBleedLeft) {
-                            lineTo(halfStroke, cornerRadius)
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(halfStroke, halfStroke, 2 * cornerRadius - halfStroke, 2 * cornerRadius - halfStroke),
-                                startAngleDegrees = 180f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
+                            lineTo(halfStroke, halfStroke)
                         } else {
                             moveTo(0f, halfStroke)
                         }
                     }
-                    drawPath(path, blockBorderColor, style = stroke)
+                    drawPath(path, finalBorderColor, style = stroke)
                 }
                 .clickable { onClick() }
         )
@@ -1021,11 +1004,12 @@ fun ScheduleBlock(
                 modifier = Modifier
                     .offset(y = (-24).dp)
                     .align(Alignment.TopCenter)
-                    .background(if (isWarning) Color.Red else MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                    .background(if (isWarning) Color.Red else MaterialTheme.colorScheme.primary, RectangleShape)
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = "$startStr - $endStr",
+                    text = "[ $startStr - $endStr ]",
+                    fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -1049,7 +1033,8 @@ fun ScheduleBlock(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = schedule.title, 
+                    text = schedule.title.uppercase(java.util.Locale.getDefault()), 
+                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold, 
                     fontSize = 15.sp, 
                     color = textColor,
@@ -1058,7 +1043,8 @@ fun ScheduleBlock(
                 )
                 if (schedule.label.isNotBlank()) {
                     Text(
-                        text = getLabelName(schedule.label), 
+                        text = getLabelName(schedule.label).uppercase(java.util.Locale.getDefault()), 
+                        fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp, 
                         color = subTextColor,
                         maxLines = 1,
@@ -1067,7 +1053,8 @@ fun ScheduleBlock(
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "$startStr - $endStr", 
+                    text = "[ $startStr - $endStr ]", 
+                    fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp, 
                     color = subTextColor,
                     maxLines = 1,
@@ -1075,13 +1062,11 @@ fun ScheduleBlock(
                 )
             }
             
-            // Status Icon appended to the right of the text
+            // Status Text Checkbox
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(if (isUncategorized) Color.Transparent else if (status == ScheduleStatus.COMPLETED) Color.Gray.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
-                    .then(if (isUncategorized) Modifier.border(2.dp, iconBorderColor, CircleShape) else Modifier)
+                    .background(Color.Transparent)
+                    .border(1.dp, if (iconBorderColor == Color.Transparent) textColor.copy(alpha=0.5f) else iconBorderColor, RectangleShape)
                     .clickable { 
                         if (enableRadioMenu) {
                             showStatusMenu = true 
@@ -1089,19 +1074,21 @@ fun ScheduleBlock(
                             val nextStatus = if (status == ScheduleStatus.NOT_DONE) ScheduleStatus.COMPLETED else ScheduleStatus.NOT_DONE
                             onStatusChange(nextStatus)
                         }
-                    },
+                    }
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = when (status) {
-                        ScheduleStatus.COMPLETED -> Icons.Default.CheckCircle
-                        ScheduleStatus.SKIPPED -> Icons.Default.FastForward
-                        ScheduleStatus.DROPPED -> Icons.Default.Cancel
-                        else -> Icons.Outlined.RadioButtonUnchecked
+                Text(
+                    text = when (status) {
+                        ScheduleStatus.COMPLETED -> "[X]"
+                        ScheduleStatus.SKIPPED -> "[-]"
+                        ScheduleStatus.DROPPED -> "[/]"
+                        else -> "[ ]"
                     },
-                    contentDescription = "Status",
-                    tint = textColor,
-                    modifier = Modifier.size(18.dp)
+                    fontFamily = FontFamily.Monospace,
+                    color = textColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
                 )
                 
                 DropdownMenu(

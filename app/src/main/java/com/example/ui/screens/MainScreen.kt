@@ -1,4 +1,6 @@
 package com.example.ui.screens
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -83,8 +85,9 @@ fun MainScreen(viewModel: MainViewModel) {
         gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet(
+                modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RectangleShape),
                 drawerContainerColor = MaterialTheme.colorScheme.surface,
-                drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+                drawerShape = RectangleShape
             ) {
                 // 1. Rich Drawer Header
                 Column(
@@ -102,7 +105,7 @@ fun MainScreen(viewModel: MainViewModel) {
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary, RectangleShape)
                                     .padding(6.dp)
                             ) {
                                 coil.compose.AsyncImage(
@@ -114,20 +117,20 @@ fun MainScreen(viewModel: MainViewModel) {
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clip(CircleShape)
+                                        .clip(RectangleShape)
                                 )
                             }
                         } else {
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary, RectangleShape)
                                     .padding(6.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clip(CircleShape)
+                                        .clip(RectangleShape)
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -143,8 +146,9 @@ fun MainScreen(viewModel: MainViewModel) {
                         Spacer(modifier = Modifier.width(20.dp))
                         Column {
                             Text(
-                                text = "Hi, ${uiState.profileName.takeIf { it.isNotBlank() } ?: "Guest"}",
-                                style = MaterialTheme.typography.headlineMedium,
+                                text = "[ AUTH: ${uiState.profileName.takeIf { it.isNotBlank() }?.uppercase(java.util.Locale.getDefault()) ?: "GUEST"} ]",
+                                fontFamily = FontFamily.Monospace,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
@@ -154,7 +158,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     }
                 }
                 
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
 
                 // Scrollable content
                 Column(
@@ -167,18 +171,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     // Section 0: Home
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                        label = { Text("Home") },
+                        label = { Text("HOME", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.HOME,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.HOME)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -187,18 +191,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.DAILY_SCHEDULE) Icons.Filled.DateRange else Icons.Outlined.DateRange, contentDescription = null) },
-                        label = { Text("Daily Schedule") },
+                        label = { Text("DAILY SCHEDULE", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.DAILY_SCHEDULE,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.DAILY_SCHEDULE)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -207,18 +211,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.PRIVATE_JOURNAL) Icons.Filled.Book else Icons.Outlined.Book, contentDescription = null) },
-                        label = { Text("Private Journal") },
+                        label = { Text("PRIVATE JOURNAL", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.PRIVATE_JOURNAL,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.PRIVATE_JOURNAL)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -227,18 +231,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.CHECK_INS) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle, contentDescription = null) },
-                        label = { Text("Trackers") },
+                        label = { Text("TRACKERS", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.CHECK_INS,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.CHECK_INS)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -247,42 +251,24 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                     
-                    NavigationDrawerItem(
-                        icon = { Icon(if (uiState.currentMode == TimerMode.CHRONOMETER) Icons.Filled.Timer else Icons.Outlined.Timer, contentDescription = null) },
-                        label = { Text("Deadlines") },
-                        selected = uiState.currentMode == TimerMode.CHRONOMETER,
-                        onClick = {
-                            viewModel.setTimerMode(TimerMode.CHRONOMETER)
-                            scope.launch { drawerState.close() }
-                        },
-                        shape = RoundedCornerShape(50),
-                        colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
+
                     
 
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.POMODORO) Icons.Filled.HourglassBottom else Icons.Outlined.HourglassBottom, contentDescription = null) },
-                        label = { Text("Pomodoro") },
+                        label = { Text("POMODORO", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.POMODORO,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.POMODORO)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -291,18 +277,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.QUICK_DEADLINES) Icons.Filled.AccessTime else Icons.Outlined.AccessTime, contentDescription = null) },
-                        label = { Text("Reminders") },
+                        label = { Text("REMINDERS", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.QUICK_DEADLINES,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.QUICK_DEADLINES)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -313,18 +299,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.ANALYTICS) Icons.Filled.BarChart else Icons.Outlined.BarChart, contentDescription = null) },
-                        label = { Text("Analytics") },
+                        label = { Text("ANALYTICS", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.ANALYTICS,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.ANALYTICS)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -333,18 +319,18 @@ fun MainScreen(viewModel: MainViewModel) {
                     
                     NavigationDrawerItem(
                         icon = { Icon(if (uiState.currentMode == TimerMode.SETTINGS) Icons.Filled.Settings else Icons.Outlined.Settings, contentDescription = null) },
-                        label = { Text("Settings") },
+                        label = { Text("SETTINGS", fontFamily = FontFamily.Monospace) },
                         selected = uiState.currentMode == TimerMode.SETTINGS,
                         onClick = {
                             viewModel.setTimerMode(TimerMode.SETTINGS)
                             scope.launch { drawerState.close() }
                         },
-                        shape = RoundedCornerShape(50),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             unselectedContainerColor = Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
