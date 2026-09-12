@@ -42,6 +42,10 @@ import com.example.ui.components.UniversalTimePickerDialog
 import java.util.Calendar
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -63,6 +67,23 @@ fun HomeScreen(
     
     val activeTasks by viewModel.activeTasks.collectAsState()
     val quickDeadlines = activeTasks.filter { it.labels == "Reminder" }.sortedBy { it.deadlineDateTime ?: Long.MAX_VALUE }
+
+    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            currentTime = System.currentTimeMillis()
+        }
+    }
+
+    val activeTask = remember(uiState.dailySchedules, currentTime) {
+        uiState.dailySchedules.firstOrNull { it.startTime <= currentTime && it.endTime > currentTime }
+    }
+    val standbyTask = remember(uiState.dailySchedules, currentTime) {
+        uiState.dailySchedules
+            .filter { it.startTime > currentTime }
+            .minByOrNull { it.startTime }
+    }
     
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -87,7 +108,122 @@ fun HomeScreen(
             }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Protocol HUD: [ NOW ] Active Protocol & [ NEXT ] Standby Protocol
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val outlineColor = MaterialTheme.colorScheme.outline
+            if (activeTask != null) {
+                val startStr = TimeFormatUtils.formatTimeOnly(activeTask.startTime, uiState.use24HourFormat)
+                val endStr = TimeFormatUtils.formatTimeOnly(activeTask.endTime, uiState.use24HourFormat)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(MaterialTheme.colorScheme.primary, RectangleShape)
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "[ ACTIVE ]",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        text = "$startStr - $endStr",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        text = activeTask.title.uppercase(Locale.getDefault()),
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Color.Transparent, RectangleShape)
+                        .drawBehind {
+                            val stroke = Stroke(
+                                width = 1.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                            )
+                            drawRect(
+                                color = outlineColor,
+                                style = stroke
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "[ NO ACTIVE PROTOCOL ]",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (standbyTask != null) {
+                val standbyStartStr = TimeFormatUtils.formatTimeOnly(standbyTask.startTime, uiState.use24HourFormat)
+                val standbyEndStr = TimeFormatUtils.formatTimeOnly(standbyTask.endTime, uiState.use24HourFormat)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .background(Color.Transparent, RectangleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RectangleShape)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "[ STANDBY ]",
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "$standbyStartStr - $standbyEndStr",
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = standbyTask.title.uppercase(Locale.getDefault()),
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
         
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),

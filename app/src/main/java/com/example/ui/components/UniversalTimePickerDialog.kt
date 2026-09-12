@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,8 +33,9 @@ fun UniversalTimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxWidth(),
+        shape = RectangleShape,
         containerColor = MaterialTheme.colorScheme.surface,
-        title = { Text("Select Time", color = MaterialTheme.colorScheme.onSurface) },
+        title = { Text("SELECT TIME", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -49,9 +52,9 @@ fun UniversalTimePickerDialog(
                     periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surface,
                     periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
                     periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurface,
-                    timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
                     timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    timeSelectorSelectedContentColor = MaterialTheme.colorScheme.primary,
+                    timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
                     timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurface
                 )
                 
@@ -207,12 +210,12 @@ fun UniversalTimePickerDialog(
             TextButton(onClick = {
                 onTimeSelected(timePickerState.hour, timePickerState.minute)
             }) {
-                Text("OK", color = MaterialTheme.colorScheme.primary)
+                Text("[ OK ]", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                Text("[ CANCEL ]", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
             }
         }
     )

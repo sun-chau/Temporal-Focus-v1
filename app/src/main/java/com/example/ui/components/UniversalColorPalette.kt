@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -56,6 +58,7 @@ fun ColorPaletteBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = RectangleShape,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
@@ -70,12 +73,13 @@ fun ColorPaletteBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Select Color",
+                    text = "SELECT COLOR",
                     style = MaterialTheme.typography.titleLarge,
+                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
                 )
                 TextButton(onClick = { onReset(); onDismiss() }) {
-                    Text("Reset")
+                    Text("[ RESET ]", fontFamily = FontFamily.Monospace)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -136,9 +140,9 @@ fun ColorSwatch(
     Box(
         modifier = Modifier
             .size(56.dp)
-            .clip(CircleShape)
+            .clip(RectangleShape)
             .background(color)
-            .border(BorderStroke(1.dp, borderColor), CircleShape)
+            .border(BorderStroke(1.dp, borderColor), RectangleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -160,15 +164,14 @@ fun AddCustomColorButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(56.dp)
-            .clip(CircleShape)
+            .clip(RectangleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         // Dashed border
         androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(
+            drawRect(
                 color = borderColor,
-                radius = size.minDimension / 2 - 1.dp.toPx(),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(
                     width = 1.dp.toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
@@ -225,7 +228,8 @@ fun CustomColorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Custom Color") },
+        shape = RectangleShape,
+        title = { Text("CUSTOM COLOR", fontFamily = FontFamily.Monospace) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -237,9 +241,9 @@ fun CustomColorDialog(
                     Box(
                         modifier = Modifier
                             .size(80.dp)
-                            .clip(CircleShape)
+                            .clip(RectangleShape)
                             .background(previewColor)
-                            .border(1.dp, borderColor, CircleShape)
+                            .border(1.dp, borderColor, RectangleShape)
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -249,16 +253,18 @@ fun CustomColorDialog(
                         hexInput = it
                         updateRGBFromHex(it)
                     },
-                    label = { Text("Hex Color Code") },
+                    label = { Text("Hex Color Code", fontFamily = FontFamily.Monospace) },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                    shape = RectangleShape,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Red: ${r.toInt()}")
+                Text("Red: ${r.toInt()}", fontFamily = FontFamily.Monospace)
                 Slider(value = r, onValueChange = { r = it }, valueRange = 0f..255f)
-                Text("Green: ${g.toInt()}")
+                Text("Green: ${g.toInt()}", fontFamily = FontFamily.Monospace)
                 Slider(value = g, onValueChange = { g = it }, valueRange = 0f..255f)
-                Text("Blue: ${b.toInt()}")
+                Text("Blue: ${b.toInt()}", fontFamily = FontFamily.Monospace)
                 Slider(value = b, onValueChange = { b = it }, valueRange = 0f..255f)
             }
         },
@@ -268,12 +274,12 @@ fun CustomColorDialog(
                     onSave(hexInput.uppercase())
                 }
             }) {
-                Text("Save")
+                Text("[ SAVE ]", fontFamily = FontFamily.Monospace)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("[ CANCEL ]", fontFamily = FontFamily.Monospace)
             }
         }
     )

@@ -9,6 +9,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -33,6 +35,7 @@ fun UniversalDatePickerDialog(
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        shape = RectangleShape,
         confirmButton = {
             TextButton(
                 onClick = {
@@ -56,12 +59,12 @@ fun UniversalDatePickerDialog(
                     } ?: onDismiss() // fallback if null
                 }
             ) {
-                Text("OK", color = MaterialTheme.colorScheme.primary)
+                Text("[ OK ]", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                Text("[ CANCEL ]", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
             }
         },
         colors = DatePickerDefaults.colors(
@@ -88,8 +91,8 @@ fun UniversalDatePickerDialog(
                 disabledSelectedDayContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
                 todayContentColor = MaterialTheme.colorScheme.primary,
                 todayDateBorderColor = MaterialTheme.colorScheme.primary,
-                dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
-                dayInSelectionRangeContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onPrimary,
+                dayInSelectionRangeContainerColor = MaterialTheme.colorScheme.primary
             )
         )
     }

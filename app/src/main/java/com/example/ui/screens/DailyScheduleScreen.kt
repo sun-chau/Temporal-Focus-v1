@@ -1145,7 +1145,10 @@ fun ScheduleCreateSheet(
     val startText = formatTime(startCal.get(Calendar.HOUR_OF_DAY), startCal.get(Calendar.MINUTE), use24HourFormat)
     val endText = formatTime(endCal.get(Calendar.HOUR_OF_DAY), endCal.get(Calendar.MINUTE), use24HourFormat)
     
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RectangleShape
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1154,7 +1157,8 @@ fun ScheduleCreateSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = if (initialSchedule != null) "Edit Schedule" else "New Schedule",
+                text = if (initialSchedule != null) "[ EDIT SCHEDULE ]" else "[ NEW SCHEDULE ]",
+                fontFamily = FontFamily.Monospace,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -1162,7 +1166,9 @@ fun ScheduleCreateSheet(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Task Title") },
+                label = { Text("Task Title", fontFamily = FontFamily.Monospace) },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -1191,13 +1197,14 @@ fun ScheduleCreateSheet(
                 }
 
                 OutlinedCard(
+                    shape = RectangleShape,
                     modifier = Modifier.weight(1f).clickable {
                         showStartTimePicker = true
                     }
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Start Time", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                        Text(startText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Start Time", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace)
+                        Text(startText, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace)
                     }
                 }
                 
@@ -1225,18 +1232,19 @@ fun ScheduleCreateSheet(
                 }
 
                 OutlinedCard(
+                    shape = RectangleShape,
                     modifier = Modifier.weight(1f).clickable {
                         showEndTimePicker = true
                     }
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text("End Time", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                        Text(endText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("End Time", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace)
+                        Text(endText, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace)
                     }
                 }
             }
             
-            Text("Category Tag", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("Category Tag", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace)
             val labels = categories.ifEmpty { listOf("WORK", "STUDY", "HEALTH", "LEISURE", "CHORES") }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
@@ -1244,22 +1252,20 @@ fun ScheduleCreateSheet(
                     Box(
                         modifier = Modifier
                             .height(36.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RectangleShape)
                             .background(if (isNoneSelected) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RectangleShape)
                             .clickable { selectedTag = "" }
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Close, contentDescription = "None", modifier = Modifier.size(16.dp).padding(end = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(
-                                text = "None",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = "[ X ] NONE",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
                 items(labels) { label ->
@@ -1269,16 +1275,18 @@ fun ScheduleCreateSheet(
                     Box(
                         modifier = Modifier
                             .height(36.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) color else color.copy(alpha = 0.2f))
+                            .clip(RectangleShape)
+                            .background(if (isSelected) color else Color.Transparent)
+                            .border(1.dp, color, RectangleShape)
                             .clickable { selectedTag = if (selectedTag == label) "" else label }
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = getLabelName(label),
+                            text = getLabelName(label).uppercase(java.util.Locale.getDefault()),
+                            fontFamily = FontFamily.Monospace,
                             color = if (isSelected) MaterialTheme.colorScheme.onSurface else color,
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -1288,7 +1296,7 @@ fun ScheduleCreateSheet(
             Spacer(modifier = Modifier.height(16.dp))
             
             if (initialSchedule == null) {
-                Text("Repeat (Next 4 weeks)", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text("Repeat (Next 4 weeks)", fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace)
                 Spacer(modifier = Modifier.height(8.dp))
                 val daysOfWeek = listOf(
                     Calendar.SUNDAY to "S",
@@ -1306,8 +1314,12 @@ fun ScheduleCreateSheet(
                             modifier = Modifier
                                 .weight(1f)
                                 .aspectRatio(1f)
-                                .clip(CircleShape)
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    RectangleShape
+                                )
                                 .clickable { 
                                     recurringDays = if (isSelected) recurringDays - dayValue else recurringDays + dayValue
                                 },
@@ -1315,6 +1327,7 @@ fun ScheduleCreateSheet(
                         ) {
                             Text(
                                 text = label, 
+                                fontFamily = FontFamily.Monospace,
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1328,9 +1341,10 @@ fun ScheduleCreateSheet(
                 if (initialSchedule != null) {
                     OutlinedButton(
                         onClick = onDelete,
+                        shape = RectangleShape,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text("[ DELETE ]", fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.error)
                     }
                 }
                 
@@ -1346,9 +1360,10 @@ fun ScheduleCreateSheet(
                         }
                         onSave(title, startTime, endTime, selectedTag, recurringDays)
                     },
+                    shape = RectangleShape,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Save")
+                    Text("[ SAVE ]", fontFamily = FontFamily.Monospace)
                 }
             }
         }
